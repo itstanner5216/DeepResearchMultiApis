@@ -1,7 +1,36 @@
 // 👇 ENHANCED SCRIPTABLE.JS WITH CONTENT SCRAPING & AUTO-SUMMARIZATION
 
-const braveKey = "BSAUZcHnbsKgi9GTsu4wQV2SPEeZ3wy";
-const newsKey = "09494b1a857d48a3b7fe62515c1ab8f9";
+// Load API keys from config file (do not hardcode sensitive keys)
+const API_KEYS_PATH = "/private/api_keys.json";
+let braveKey = null;
+let newsKey = null;
+
+// Helper to load or prompt for API keys
+function loadApiKeys() {
+  let fm = FileManager.iCloud();
+  let keys = {};
+  if (fm.fileExists(API_KEYS_PATH)) {
+    try {
+      let content = fm.readString(API_KEYS_PATH);
+      keys = JSON.parse(content);
+    } catch (e) {
+      console.error("Failed to parse API keys file:", e);
+    }
+  }
+  if (!keys.braveKey) {
+    keys.braveKey = Prompt.text("Enter your Brave API key:");
+  }
+  if (!keys.newsKey) {
+    keys.newsKey = Prompt.text("Enter your News API key:");
+  }
+  // Save back if new keys were entered
+  fm.writeString(API_KEYS_PATH, JSON.stringify(keys));
+  return keys;
+}
+
+const apiKeys = loadApiKeys();
+braveKey = apiKeys.braveKey;
+newsKey = apiKeys.newsKey;
 const summarize = true; // Enable auto-summarization
 
 // New configuration options
