@@ -164,9 +164,30 @@ function summarizeContent(content) {
   return topSentences.map(item => `• ${item.sentence}`).join('\n');
 }
 
+// Helper: Retry async function with delay
+async function retryAsync(fn, retries = 3, delayMs = 1000) {
+  let lastError;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      console.warn(`Attempt ${attempt + 1} failed: ${err}. Retrying in ${delayMs}ms...`);
+      if (attempt < retries - 1) await new Promise(res => setTimeout(res, delayMs));
+    }
+  }
+  console.error(`All ${retries} attempts failed.`);
+  throw lastError;
+}
+
 async function braveSearch(q) {
   const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(q)}&count=5`;
-  return await fetchJSON(url, { "X-Subscription-Token": braveKey });
+  try {
+    return await retryAsync(() => fetchJSON(url, { "X-Subscription-Token": braveKey }), 3, 1000);
+  } catch (err) {
+    console.error("Brave Search API failed:", err);
+    return null;
+  }
 }
 
 async function newsSearch(q) {
