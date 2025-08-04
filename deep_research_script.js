@@ -165,7 +165,7 @@ async function newsSearch(q) {
   return await fetchJSON(url);
 }
 
-async function formatMarkdown(results, title) {
+async function formatResultsWithContent(results, title) {
   let md = `# 🧠 Deep Research Result – ${timestamp}\n**Query:** ${query}\n\n## ${title}\n`;
   if (!results?.length) return md + "❌ No results.\n";
   
