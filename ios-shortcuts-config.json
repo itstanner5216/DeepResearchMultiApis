@@ -1,0 +1,126 @@
+{
+  "name": "Deep Research iOS Shortcut",
+  "description": "iOS Shortcuts configuration for Deep Research Multi-APIs",
+  "version": "1.0",
+  "shortcuts": [
+    {
+      "name": "Deep Research",
+      "description": "Search from clipboard and return results to clipboard",
+      "actions": [
+        {
+          "type": "Run Shell Script",
+          "app": "a-Shell",
+          "script": "cd ~/Documents/DeepResearchMultiApis && node shortcutsResearch.js",
+          "passInput": false
+        }
+      ],
+      "icon": "🔍",
+      "color": "blue"
+    },
+    {
+      "name": "Deep Research with Input",
+      "description": "Search with text input and return results",
+      "actions": [
+        {
+          "type": "Ask for Text",
+          "prompt": "What would you like to research?",
+          "defaultAnswer": ""
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Provided Input"
+        },
+        {
+          "type": "Run Shell Script",
+          "app": "a-Shell",
+          "script": "cd ~/Documents/DeepResearchMultiApis && node shortcutsResearch.js",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Show Result"
+        }
+      ],
+      "icon": "📝",
+      "color": "green"
+    },
+    {
+      "name": "Deep Research from Siri",
+      "description": "Voice-activated research via Siri",
+      "actions": [
+        {
+          "type": "Dictate Text",
+          "locale": "en-US"
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Dictated Text"
+        },
+        {
+          "type": "Run Shell Script",
+          "app": "a-Shell",
+          "script": "cd ~/Documents/DeepResearchMultiApis && node shortcutsResearch.js",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Speak Text",
+          "text": "Research complete. Results are on your clipboard.",
+          "rate": "0.5"
+        }
+      ],
+      "icon": "🎤",
+      "color": "red",
+      "addToSiri": true,
+      "siriPhrase": "Deep research"
+    },
+    {
+      "name": "Deep Research from Share",
+      "description": "Research shared text from other apps",
+      "actions": [
+        {
+          "type": "Get Text from Input"
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Text"
+        },
+        {
+          "type": "Run Shell Script",
+          "app": "a-Shell",
+          "script": "cd ~/Documents/DeepResearchMultiApis && node shortcutsResearch.js",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Quick Look"
+        }
+      ],
+      "icon": "📤",
+      "color": "purple",
+      "shareSheet": true
+    }
+  ],
+  "requirements": {
+    "ios": "18.6+",
+    "apps": ["a-Shell", "Shortcuts"],
+    "permissions": ["clipboard", "microphone", "siri"]
+  },
+  "setup": {
+    "steps": [
+      "Install a-Shell from App Store",
+      "Install Node.js in a-Shell: pkg install nodejs npm",
+      "Copy project files to ~/Documents/DeepResearchMultiApis/",
+      "Install dependencies: npm install",
+      "Configure API keys in .env file",
+      "Import shortcuts from this configuration",
+      "Test with: npm run shortcuts"
+    ]
+  }
+}

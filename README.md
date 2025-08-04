@@ -10,6 +10,7 @@ A robust multi-API deep research tool designed for MyAssistantGPT that fetches d
 - **Retry Logic**: Exponential backoff retry mechanism
 - **Clipboard Integration**: Search from clipboard content
 - **System Notifications**: Desktop notifications for search results
+- **iOS Compatibility**: Optimized for iOS 18.6+ with Shortcuts support
 - **Flexible Configuration**: JSON and environment variable configuration
 - **Comprehensive Logging**: Detailed logging to file and console
 
@@ -51,7 +52,7 @@ cp .env.example .env
 
 ## Usage
 
-### Command Line Interface
+### Desktop/Server Usage
 
 Search with a query:
 ```bash
@@ -68,12 +69,32 @@ View configuration:
 npm run config
 ```
 
+### iOS Usage
+
+For iOS devices, use the optimized iOS version:
+
+```bash
+# iOS-optimized script with clipboard workflow
+node iosResearch.js
+
+# iOS Shortcuts integration
+node shortcutsResearch.js
+```
+
+**📱 iOS Setup**: See [iOS-SETUP.md](iOS-SETUP.md) for detailed iOS installation and Shortcuts integration instructions.
+
 ### Using npm scripts:
 ```bash
 npm start "your search query"
 npm run search "your search query"
 npm run config
 npm test
+
+# iOS-specific scripts
+npm run ios              # iOS clipboard workflow
+npm run ios-config       # iOS configuration
+npm run ios-test         # Test iOS clipboard access
+npm run shortcuts        # iOS Shortcuts wrapper
 ```
 
 ### Programmatic Usage
@@ -193,9 +214,19 @@ Log levels: INFO, WARN, ERROR, DEBUG
 
 ## System Requirements
 
+### Desktop/Server
 - Node.js 14+ 
 - Internet connection for API access
 - Valid API keys for the services you want to use
+
+### iOS Requirements
+- iOS 18.6 or later
+- Terminal app: **a-Shell** (recommended) or **iSH**
+- iOS Shortcuts app (for automation)
+- Node.js installed in terminal app
+- Valid API keys
+
+📱 **For iOS setup instructions**, see [iOS-SETUP.md](iOS-SETUP.md)
 
 ## Error Codes
 
