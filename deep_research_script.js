@@ -7,7 +7,16 @@ let newsKey = null;
 
 // Helper to load or prompt for API keys
 function loadApiKeys() {
-  let fm = FileManager.iCloud();
+  let fm;
+  // Try to use iCloud FileManager, fallback to local if unavailable
+  try {
+    fm = FileManager.iCloud();
+    // Test iCloud availability by accessing the documents directory
+    fm.list(fm.documentsDirectory());
+  } catch (e) {
+    console.warn("iCloud FileManager unavailable, falling back to local FileManager:", e);
+    fm = FileManager.local();
+  }
   let keys = {};
   if (fm.fileExists(API_KEYS_PATH)) {
     try {
