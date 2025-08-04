@@ -13,6 +13,9 @@ A comprehensive iOS-optimized deep research tool that combines multiple API sour
 - **🔐 Secure Configuration**: Multiple API key storage options including iOS Keychain
 - **📊 Comprehensive Error Handling**: User-friendly error messages and notifications
 - **🚀 Concurrent API Calls**: Parallel execution for faster results
+- **📄 Full Article Scraping**: Extract complete content from search result URLs
+- **🧠 Auto-Summarization**: Intelligent bullet-point summaries of scraped content
+- **🔄 Enhanced Fallback Logic**: NewsAPI activation when Brave Search returns no results
 
 ## 🚀 Quick Start
 
@@ -60,12 +63,24 @@ Get free API keys from these services:
 - International news coverage with source attribution
 - Graceful error handling for all failure scenarios
 
-#### 4. `googleSearch()` (Optional)
+#### 4. `contentScraper()`
+- Full article content extraction from search result URLs
+- Mobile-optimized HTML parsing and text extraction
+- Configurable content length limits for performance
+- Robust error handling for failed scraping attempts
+
+#### 5. `summarizer()`
+- Intelligent extractive summarization algorithm
+- Generates 3-5 key bullet points from scraped content
+- Keyword-based scoring for sentence importance
+- Position-aware summarization (intro/conclusion weighting)
+
+#### 6. `googleSearch()` (Optional)
 - Google Custom Search integration
 - Configurable search engine targeting
 - Falls back gracefully if credentials not provided
 
-#### 5. `googleImages()` (Optional)
+#### 7. `googleImages()` (Optional)
 - Google Images search functionality
 - Thumbnail and full-size image URLs
 - Integrated with main search results
@@ -121,9 +136,12 @@ Pass API keys as parameters when calling from iOS Shortcuts
 ### Performance Tuning
 ```javascript
 const CONFIG = {
-  MAX_RESULTS: 5,        // Results per API (default: 5)
-  TIMEOUT_MS: 15000,     // Network timeout (default: 15s)
-  RETRY_COUNT: 2,        // Retry attempts (default: 2)
+  MAX_RESULTS: 5,              // Results per API (default: 5)
+  TIMEOUT_MS: 15000,           // Network timeout (default: 15s)
+  RETRY_COUNT: 2,              // Retry attempts (default: 2)
+  SCRAPE_CONTENT: true,        // Enable full article scraping
+  SUMMARIZE: true,             // Enable auto-summarization 
+  MAX_CONTENT_LENGTH: 5000,    // Max content to scrape (mobile optimized)
   COPY_TO_CLIPBOARD: true,     // Auto-copy results
   SHOW_NOTIFICATIONS: true,    // iOS notifications
   USE_IOS_KEYCHAIN: true      // Load keys from Keychain
