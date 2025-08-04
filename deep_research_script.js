@@ -226,6 +226,47 @@ function formatImages(images) {
   return formatted;
 }
 
+
+// --- SEARCH FUNCTION STUBS ---
+async function braveSearch() {
+  // Return dummy data matching expected structure
+  return {
+    web: {
+      results: [
+        { title: "Brave Result 1", url: "https://brave.com/1", description: "Description for Brave Result 1" },
+        { title: "Brave Result 2", url: "https://brave.com/2", description: "Description for Brave Result 2" }
+      ]
+    }
+  };
+}
+
+async function googleSearch() {
+  // Return dummy data matching expected structure
+  return {
+    items: [
+      { title: "Google Result 1", link: "https://google.com/1", snippet: "Description for Google Result 1" },
+      { title: "Google Result 2", link: "https://google.com/2", snippet: "Description for Google Result 2" }
+    ]
+  };
+}
+
+async function googleImages() {
+  // Return dummy data matching expected structure
+  return {
+    items: [
+      { title: "Image 1", link: "https://images.com/1", image: { thumbnailLink: "https://images.com/thumb1" } },
+      { title: "Image 2", link: "https://images.com/2", image: { thumbnailLink: "https://images.com/thumb2" } }
+    ]
+  };
+}
+
+async function newsAPI() {
+  // Return dummy data matching expected structure
+  return [
+    { title: "News 1", url: "https://news.com/1", description: "Description for News 1" },
+    { title: "News 2", url: "https://news.com/2", description: "Description for News 2" }
+  ];
+}
 // --- RUN ALL ---
 let [brave, google, images, news] = await Promise.all([
   braveSearch(),
