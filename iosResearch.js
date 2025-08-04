@@ -1,45 +1,62 @@
-#!/usr/bin/env node
-
 /**
  * iOS-Compatible Deep Research Script
- * Optimized for iOS Shortcuts and terminal apps like a-Shell, iSH
+ * Optimized for iOS Scriptable app with native integrations
  * Focuses on clipboard-to-clipboard workflow
  */
 
-const axios = require('axios');
-const clipboardy = require('node-clipboardy');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+// Scriptable Configuration - can be modified directly or loaded from Keychain
+const SCRIPTABLE_CONFIG = {
+  BRAVE_API_KEY: "",
+  NEWS_API_KEY: "",
+  NEWSDATA_API_KEY: "",
+  MAX_RESULTS: 5,
+  TIMEOUT_MS: 15000,
+  RETRY_COUNT: 2,
+  USE_KEYCHAIN: true,
+  COPY_TO_CLIPBOARD: true,
+  SHOW_NOTIFICATIONS: true
+};
 
-// iOS Environment Detection
+// Scriptable Environment Detection
 class IOSDetector {
-    static isIOS() {
-        // Check various indicators that we're running on iOS
-        const platform = process.platform;
-        const userAgent = process.env.USER_AGENT || '';
-        const shell = process.env.SHELL || '';
-        const term = process.env.TERM || '';
-        
-        return (
-            platform === 'darwin' && (
-                userAgent.includes('iOS') ||
-                shell.includes('ash') ||  // a-Shell
-                shell.includes('ish') ||  // iSH
-                term.includes('xterm-256color') ||
-                process.env.TERM_PROGRAM === 'a-Shell' ||
-                process.env.TERM_PROGRAM === 'iSH'
-            )
-        );
+    static isScriptable() {
+        return typeof Pasteboard !== 'undefined' && 
+               typeof Script !== 'undefined' && 
+               typeof Notification !== 'undefined';
+    }
+    
+    static isTerminalApp() {
+        // Check for terminal app environment (a-Shell, iSH, etc.)
+        if (typeof process !== 'undefined') {
+            const platform = process.platform;
+            const userAgent = process.env.USER_AGENT || '';
+            const shell = process.env.SHELL || '';
+            const term = process.env.TERM || '';
+            
+            return (
+                platform === 'darwin' && (
+                    userAgent.includes('iOS') ||
+                    shell.includes('ash') ||  // a-Shell
+                    shell.includes('ish') ||  // iSH
+                    term.includes('xterm-256color') ||
+                    process.env.TERM_PROGRAM === 'a-Shell' ||
+                    process.env.TERM_PROGRAM === 'iSH'
+                )
+            );
+        }
+        return false;
     }
 
     static getIOSCompatiblePath(filename) {
-        if (this.isIOS()) {
-            // On iOS, use Documents directory or current directory
+        if (this.isScriptable()) {
+            // In Scriptable, we don't use file system for logs
+            return null;
+        } else if (this.isTerminalApp() && typeof process !== 'undefined') {
+            // On iOS terminal apps, use Documents directory or current directory
             const documentsPath = process.env.HOME ? path.join(process.env.HOME, 'Documents') : '.';
             return path.join(documentsPath, filename);
         }
-        return path.join(__dirname, filename);
+        return filename;
     }
 }
 
@@ -52,14 +69,16 @@ class IOSLogger {
         // Always log to console
         console.log(logEntry);
         
-        // Only log to file if not in iOS or if explicitly enabled
-        if (!IOSDetector.isIOS() || process.env.IOS_FILE_LOGGING === 'true') {
+        // Only log to file if in terminal app (not in Scriptable)
+        if (IOSDetector.isTerminalApp() && typeof fs !== 'undefined') {
             try {
                 const logFile = IOSDetector.getIOSCompatiblePath('research.log');
-                fs.appendFileSync(logFile, logEntry + (error ? `\nError: ${error.message}` : '') + '\n');
+                if (logFile) {
+                    fs.appendFileSync(logFile, logEntry + (error ? `\nError: ${error.message}` : '') + '\n');
+                }
             } catch (e) {
-                // Silently fail on iOS if file logging is not available
-                if (!IOSDetector.isIOS()) {
+                // Silently fail on file logging issues
+                if (!IOSDetector.isScriptable()) {
                     console.error('Failed to write to log file:', e.message);
                 }
             }
@@ -75,23 +94,80 @@ class IOSLogger {
 // iOS-Compatible Configuration Manager
 class IOSConfigManager {
     static loadConfig() {
+        // First try to load from Scriptable configuration
+        if (IOSDetector.isScriptable()) {
+            const config = { ...SCRIPTABLE_CONFIG };
+            
+            // Try to load API keys from Keychain if enabled
+            if (config.USE_KEYCHAIN && typeof Keychain !== 'undefined') {
+                try {
+                    const keys = ['BRAVE_API_KEY', 'NEWS_API_KEY', 'NEWSDATA_API_KEY'];
+                    
+                    for (const key of keys) {
+                        if (Keychain.contains(key)) {
+                            const value = Keychain.get(key);
+                            if (value && value.trim()) {
+                                config[key] = value.trim();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    IOSLogger.warn('Failed to load keys from Keychain', error);
+                }
+            }
+            
+            // Load from args/parameters if provided
+            if (typeof args !== 'undefined' && args && args.shortcutParameter) {
+                try {
+                    const params = JSON.parse(args.shortcutParameter);
+                    Object.assign(config, params);
+                } catch (error) {
+                    // Ignore parameter parsing errors
+                }
+            }
+            
+            return {
+                braveSearch: {
+                    apiKey: config.BRAVE_API_KEY || '',
+                    baseUrl: 'https://api.search.brave.com/res/v1/web/search',
+                    timeout: config.TIMEOUT_MS || 15000,
+                    retries: config.RETRY_COUNT || 2
+                },
+                newsAPI: {
+                    apiKey: config.NEWS_API_KEY || '',
+                    baseUrl: 'https://newsapi.org/v2/everything',
+                    timeout: config.TIMEOUT_MS || 15000,
+                    retries: config.RETRY_COUNT || 2
+                },
+                newsdataIO: {
+                    apiKey: config.NEWSDATA_API_KEY || '',
+                    baseUrl: 'https://newsdata.io/api/1/news',
+                    timeout: config.TIMEOUT_MS || 15000,
+                    retries: config.RETRY_COUNT || 2
+                }
+            };
+        }
+        
+        // Fallback for terminal apps - try to load config file
         try {
-            const configFile = IOSDetector.getIOSCompatiblePath('config.json');
-            if (fs.existsSync(configFile)) {
-                const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-                return config;
+            if (typeof fs !== 'undefined') {
+                const configFile = IOSDetector.getIOSCompatiblePath('config.json');
+                if (configFile && fs.existsSync(configFile)) {
+                    const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+                    return config;
+                }
             }
         } catch (error) {
             IOSLogger.warn('Config file not found or invalid, using environment variables');
         }
         
-        // Return default config with environment variables
-        return {
+        // Return default config with environment variables (for terminal apps)
+        const envConfig = (typeof process !== 'undefined') ? {
             braveSearch: {
                 apiKey: process.env.BRAVE_API_KEY || '',
                 baseUrl: 'https://api.search.brave.com/res/v1/web/search',
-                timeout: 15000, // Longer timeout for mobile networks
-                retries: 2 // Fewer retries on mobile
+                timeout: 15000,
+                retries: 2
             },
             newsAPI: {
                 apiKey: process.env.NEWS_API_KEY || '',
@@ -105,18 +181,38 @@ class IOSConfigManager {
                 timeout: 15000,
                 retries: 2
             }
+        } : {
+            braveSearch: { apiKey: '', baseUrl: 'https://api.search.brave.com/res/v1/web/search', timeout: 15000, retries: 2 },
+            newsAPI: { apiKey: '', baseUrl: 'https://newsapi.org/v2/everything', timeout: 15000, retries: 2 },
+            newsdataIO: { apiKey: '', baseUrl: 'https://newsdata.io/api/1/news', timeout: 15000, retries: 2 }
         };
+        
+        return envConfig;
     }
 }
 
-// iOS-Compatible Notification Manager (no desktop notifications)
+// iOS-Compatible Notification Manager
 class IOSNotificationManager {
-    static notify(title, message, type = 'info') {
-        // On iOS, just log notifications instead of showing desktop notifications
+    static async notify(title, message, type = 'info') {
+        // Always log notifications
         IOSLogger.info(`NOTIFICATION: ${title} - ${message}`);
         
-        // For iOS shortcuts, we can output specially formatted text
-        if (process.env.IOS_SHORTCUTS_MODE === 'true') {
+        // Use Scriptable notifications if available
+        if (IOSDetector.isScriptable() && typeof Notification !== 'undefined') {
+            try {
+                const notification = new Notification();
+                notification.title = title;
+                notification.body = message;
+                notification.sound = null;
+                await notification.schedule();
+            } catch (error) {
+                IOSLogger.warn('Failed to show Scriptable notification', error);
+            }
+        }
+        
+        // For iOS shortcuts or terminal apps, output specially formatted text
+        if ((typeof process !== 'undefined' && process.env.IOS_SHORTCUTS_MODE === 'true') || 
+            (typeof args !== 'undefined')) {
             console.log(`📱 ${title}: ${message}`);
         }
     }
@@ -138,12 +234,88 @@ class IOSRetryUtility {
                     throw lastError;
                 }
                 
-                // Simple delay for iOS
+                // Simple delay - use Scriptable Timer if available, otherwise setTimeout
                 const delay = baseDelay * attempt;
                 IOSLogger.info(`Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                
+                if (IOSDetector.isScriptable() && typeof Timer !== 'undefined') {
+                    await new Promise(resolve => {
+                        Timer.schedule(delay, false, resolve);
+                    });
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
             }
         }
+    }
+}
+
+// Cross-platform HTTP Client
+class IOSHttpClient {
+    static async makeRequest(url, options = {}) {
+        // Use Scriptable Request if available
+        if (IOSDetector.isScriptable() && typeof Request !== 'undefined') {
+            return this.makeScriptableRequest(url, options);
+        }
+        
+        // Fallback to axios for terminal apps
+        if (typeof axios !== 'undefined') {
+            return this.makeAxiosRequest(url, options);
+        }
+        
+        throw new Error('No HTTP client available');
+    }
+    
+    static async makeScriptableRequest(url, options = {}) {
+        try {
+            const request = new Request(url);
+            
+            // Set headers
+            if (options.headers) {
+                Object.entries(options.headers).forEach(([key, value]) => {
+                    request.headers[key] = value;
+                });
+            }
+            
+            // Set timeout (convert from ms to seconds)
+            request.timeoutInterval = (options.timeout || 15000) / 1000;
+            
+            // Set method
+            request.method = options.method || 'GET';
+            
+            // Add query parameters
+            if (options.params) {
+                const urlObj = new URL(url);
+                Object.entries(options.params).forEach(([key, value]) => {
+                    urlObj.searchParams.append(key, value);
+                });
+                request.url = urlObj.toString();
+            }
+            
+            // Make the request
+            const response = await request.loadJSON();
+            
+            return {
+                data: response,
+                status: 200 // Scriptable doesn't provide status codes directly
+            };
+            
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    static async makeAxiosRequest(url, options = {}) {
+        const requestConfig = {
+            method: options.method || 'GET',
+            url: url,
+            params: options.params,
+            headers: options.headers,
+            timeout: options.timeout || 15000
+        };
+        
+        const response = await axios(requestConfig);
+        return response;
     }
 }
 
@@ -151,8 +323,9 @@ class IOSRetryUtility {
 class IOSDeepResearcher {
     constructor() {
         this.config = IOSConfigManager.loadConfig();
-        this.isIOS = IOSDetector.isIOS();
-        IOSLogger.info(`iOS Deep Researcher initialized (iOS: ${this.isIOS})`);
+        this.isScriptable = IOSDetector.isScriptable();
+        this.isTerminalApp = IOSDetector.isTerminalApp();
+        IOSLogger.info(`iOS Deep Researcher initialized (Scriptable: ${this.isScriptable}, Terminal: ${this.isTerminalApp})`);
     }
 
     // Brave Search optimized for iOS
@@ -178,7 +351,6 @@ class IOSDeepResearcher {
 
             const requestConfig = {
                 method: 'GET',
-                url: this.config.braveSearch.baseUrl,
                 params: params,
                 headers: {
                     'Accept': 'application/json',
@@ -190,7 +362,10 @@ class IOSDeepResearcher {
 
             const response = await IOSRetryUtility.withRetry(
                 async () => {
-                    const result = await axios(requestConfig);
+                    const result = await IOSHttpClient.makeRequest(
+                        this.config.braveSearch.baseUrl,
+                        requestConfig
+                    );
                     if (!result.data) {
                         throw new Error('Empty response from Brave Search API');
                     }
@@ -272,7 +447,6 @@ class IOSDeepResearcher {
 
             const requestConfig = {
                 method: 'GET',
-                url: this.config.newsAPI.baseUrl,
                 params: params,
                 headers: {
                     'Authorization': `Bearer ${this.config.newsAPI.apiKey}`,
@@ -283,7 +457,10 @@ class IOSDeepResearcher {
 
             const response = await IOSRetryUtility.withRetry(
                 async () => {
-                    const result = await axios(requestConfig);
+                    const result = await IOSHttpClient.makeRequest(
+                        this.config.newsAPI.baseUrl,
+                        requestConfig
+                    );
                     if (!result.data || result.data.status !== 'ok') {
                         throw new Error(result.data?.message || 'NewsAPI returned error');
                     }
@@ -367,7 +544,6 @@ class IOSDeepResearcher {
 
             const requestConfig = {
                 method: 'GET',
-                url: this.config.newsdataIO.baseUrl,
                 params: params,
                 headers: {
                     'User-Agent': 'iOS-DeepResearch/1.0'
@@ -377,7 +553,10 @@ class IOSDeepResearcher {
 
             const response = await IOSRetryUtility.withRetry(
                 async () => {
-                    const result = await axios(requestConfig);
+                    const result = await IOSHttpClient.makeRequest(
+                        this.config.newsdataIO.baseUrl,
+                        requestConfig
+                    );
                     if (!result.data || result.data.status !== 'success') {
                         throw new Error(result.data?.message || 'Newsdata.io returned error');
                     }
@@ -506,10 +685,16 @@ class IOSDeepResearcher {
         try {
             IOSLogger.info('Starting iOS clipboard workflow');
             
-            // Read query from clipboard
+            // Read query from clipboard - use Scriptable Pasteboard or clipboardy fallback
             let query;
             try {
-                query = await clipboardy.read();
+                if (IOSDetector.isScriptable() && typeof Pasteboard !== 'undefined') {
+                    query = Pasteboard.paste();
+                } else if (typeof clipboardy !== 'undefined') {
+                    query = await clipboardy.read();
+                } else {
+                    throw new Error('No clipboard access available');
+                }
             } catch (error) {
                 throw new Error('Failed to read from clipboard. Make sure clipboard access is enabled.');
             }
@@ -533,16 +718,23 @@ class IOSDeepResearcher {
 
             // Write results back to clipboard
             try {
-                await clipboardy.write(summary);
+                if (IOSDetector.isScriptable() && typeof Pasteboard !== 'undefined') {
+                    Pasteboard.copy(summary);
+                } else if (typeof clipboardy !== 'undefined') {
+                    await clipboardy.write(summary);
+                }
                 IOSLogger.info('Results summary written to clipboard');
-                IOSNotificationManager.notify('Clipboard Updated', 'Search results copied to clipboard');
+                await IOSNotificationManager.notify('Clipboard Updated', 'Search results copied to clipboard');
             } catch (error) {
                 IOSLogger.error('Failed to write to clipboard', error);
                 // Still return results even if clipboard write fails
             }
 
-            // For iOS Shortcuts, also output to console
-            if (process.env.IOS_SHORTCUTS_MODE === 'true') {
+            // For iOS Shortcuts, also set shortcut output
+            if (IOSDetector.isScriptable() && typeof Script !== 'undefined') {
+                Script.setShortcutOutput(summary);
+            } else if ((typeof process !== 'undefined' && process.env.IOS_SHORTCUTS_MODE === 'true') ||
+                       (typeof args !== 'undefined')) {
                 console.log('\n📋 RESULTS COPIED TO CLIPBOARD 📋\n');
                 console.log(summary);
             }
@@ -557,12 +749,19 @@ class IOSDeepResearcher {
 
         } catch (error) {
             IOSLogger.error('iOS clipboard workflow failed', error);
-            IOSNotificationManager.notify('Workflow Error', error.message, 'error');
+            await IOSNotificationManager.notify('Workflow Error', error.message, 'error');
             
             // Try to write error to clipboard for shortcuts
             try {
                 const errorMessage = `❌ Deep Research Error: ${error.message}\nTime: ${new Date().toISOString()}`;
-                await clipboardy.write(errorMessage);
+                if (IOSDetector.isScriptable() && typeof Pasteboard !== 'undefined') {
+                    Pasteboard.copy(errorMessage);
+                    if (typeof Script !== 'undefined') {
+                        Script.setShortcutOutput(errorMessage);
+                    }
+                } else if (typeof clipboardy !== 'undefined') {
+                    await clipboardy.write(errorMessage);
+                }
             } catch (clipError) {
                 IOSLogger.error('Failed to write error to clipboard', clipError);
             }
@@ -606,86 +805,164 @@ class IOSDeepResearcher {
             });
         }
 
-        summary += `\n🤖 Generated by iOS Deep Research v1.0\n`;
+        const platform = IOSDetector.isScriptable() ? 'Scriptable' : 'iOS Terminal';
+        summary += `\n🤖 Generated by ${platform} Deep Research v2.0\n`;
         return summary;
     }
 }
 
 // iOS CLI Interface
 async function iosMain() {
-    const args = process.argv.slice(2);
     const researcher = new IOSDeepResearcher();
 
     try {
-        // Check if running on iOS
-        if (IOSDetector.isIOS()) {
-            IOSLogger.info('iOS environment detected');
-            process.env.IOS_SHORTCUTS_MODE = 'true'; // Enable shortcuts mode
-        }
-
-        if (args.length === 0 || args[0] === '--clipboard') {
-            // Default behavior: clipboard workflow (perfect for iOS shortcuts)
-            await researcher.iosClipboardWorkflow();
-        } else if (args[0] === '--config') {
-            // Configuration mode
-            console.log('📱 iOS Deep Research Configuration:');
-            console.log(JSON.stringify(researcher.config, null, 2));
-        } else if (args[0] === '--test-clipboard') {
-            // Test clipboard access
-            try {
-                const clipContent = await clipboardy.read();
-                console.log('✅ Clipboard read successful');
-                console.log('📋 Current clipboard content:', clipContent || '(empty)');
-                
-                await clipboardy.write('iOS Deep Research Test - ' + new Date().toISOString());
-                console.log('✅ Clipboard write successful');
-            } catch (error) {
-                console.log('❌ Clipboard access failed:', error.message);
+        // Detect environment and set appropriate mode
+        if (IOSDetector.isScriptable()) {
+            IOSLogger.info('Scriptable environment detected');
+            
+            // Handle different input sources for Scriptable
+            let query = '';
+            
+            // 1. Check for Shortcuts parameter
+            if (typeof args !== 'undefined' && args && args.shortcutParameter) {
+                try {
+                    const param = JSON.parse(args.shortcutParameter);
+                    if (param.query) {
+                        query = param.query;
+                    }
+                } catch (e) {
+                    // Not JSON, treat as direct query
+                    query = args.shortcutParameter;
+                }
             }
-        } else {
-            // Search with provided query
-            const query = args.join(' ');
-            IOSLogger.info(`iOS search for: "${query}"`);
+            
+            // 2. Check for plaintext parameter
+            if (!query && typeof args !== 'undefined' && args && args.plaintextParameters) {
+                query = args.plaintextParameters;
+            }
+            
+            // 3. Default to clipboard workflow
+            if (!query) {
+                await researcher.iosClipboardWorkflow();
+                return;
+            }
+            
+            // 4. Direct query search
+            IOSLogger.info(`Scriptable search for: "${query}"`);
             const results = await researcher.iosComprehensiveSearch(query);
             
-            // Output results
-            if (process.env.IOS_SHORTCUTS_MODE === 'true') {
-                const summary = researcher.generateIOSResultsSummary(results);
-                console.log(summary);
-                
-                // Also copy to clipboard for shortcuts
+            // Generate and output results
+            const summary = researcher.generateIOSResultsSummary(results);
+            console.log(summary);
+            
+            // Copy to clipboard and set Shortcuts output
+            if (SCRIPTABLE_CONFIG.COPY_TO_CLIPBOARD) {
                 try {
-                    await clipboardy.write(summary);
-                    console.log('\n📋 Results copied to clipboard for iOS Shortcuts');
+                    Pasteboard.copy(summary);
+                    console.log('\n📋 Results copied to clipboard');
                 } catch (error) {
                     IOSLogger.warn('Could not copy to clipboard', error);
                 }
-            } else {
-                console.log(JSON.stringify(results, null, 2));
             }
+            
+            if (typeof Script !== 'undefined') {
+                Script.setShortcutOutput(summary);
+            }
+            
+        } else if (IOSDetector.isTerminalApp()) {
+            // Terminal app mode (a-Shell, iSH, etc.)
+            const args = typeof process !== 'undefined' ? process.argv.slice(2) : [];
+            
+            IOSLogger.info('iOS terminal environment detected');
+            if (typeof process !== 'undefined') {
+                process.env.IOS_SHORTCUTS_MODE = 'true'; // Enable shortcuts mode
+            }
+
+            if (args.length === 0 || args[0] === '--clipboard') {
+                // Default behavior: clipboard workflow
+                await researcher.iosClipboardWorkflow();
+            } else if (args[0] === '--config') {
+                // Configuration mode
+                console.log('📱 iOS Deep Research Configuration:');
+                console.log(JSON.stringify(researcher.config, null, 2));
+            } else if (args[0] === '--test-clipboard') {
+                // Test clipboard access
+                try {
+                    const clipContent = typeof clipboardy !== 'undefined' ? await clipboardy.read() : '(no clipboardy)';
+                    console.log('✅ Clipboard read test completed');
+                    console.log('📋 Current clipboard content:', clipContent || '(empty)');
+                    
+                    if (typeof clipboardy !== 'undefined') {
+                        await clipboardy.write('iOS Deep Research Test - ' + new Date().toISOString());
+                        console.log('✅ Clipboard write test completed');
+                    }
+                } catch (error) {
+                    console.log('❌ Clipboard access failed:', error.message);
+                }
+            } else {
+                // Search with provided query
+                const query = args.join(' ');
+                IOSLogger.info(`iOS search for: "${query}"`);
+                const results = await researcher.iosComprehensiveSearch(query);
+                
+                // Output results
+                const summary = researcher.generateIOSResultsSummary(results);
+                console.log(summary);
+                
+                // Copy to clipboard for shortcuts
+                try {
+                    if (typeof clipboardy !== 'undefined') {
+                        await clipboardy.write(summary);
+                        console.log('\n📋 Results copied to clipboard for iOS Shortcuts');
+                    }
+                } catch (error) {
+                    IOSLogger.warn('Could not copy to clipboard', error);
+                }
+            }
+        } else {
+            // Default fallback mode
+            IOSLogger.info('Running in fallback mode');
+            await researcher.iosClipboardWorkflow();
         }
     } catch (error) {
         IOSLogger.error('iOS main execution failed', error);
         
-        if (process.env.IOS_SHORTCUTS_MODE === 'true') {
-            console.log(`❌ Error: ${error.message}`);
+        const errorMessage = `❌ Error: ${error.message}`;
+        console.log(errorMessage);
+        
+        // Try to provide error output for Shortcuts
+        if (IOSDetector.isScriptable() && typeof Script !== 'undefined') {
+            Script.setShortcutOutput(errorMessage);
         }
         
-        process.exit(1);
+        if (typeof process !== 'undefined') {
+            process.exit(1);
+        } else {
+            throw error;
+        }
     }
 }
 
 // Export for testing and module use
-module.exports = { 
-    IOSDeepResearcher, 
-    IOSLogger, 
-    IOSConfigManager, 
-    IOSNotificationManager, 
-    IOSRetryUtility,
-    IOSDetector 
-};
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { 
+        IOSDeepResearcher, 
+        IOSLogger, 
+        IOSConfigManager, 
+        IOSNotificationManager, 
+        IOSRetryUtility,
+        IOSDetector,
+        IOSHttpClient
+    };
+}
 
-// Run if called directly
-if (require.main === module) {
-    iosMain();
+// Run if called directly (terminal apps) or in Scriptable
+if ((typeof require !== 'undefined' && require.main === module) || 
+    (typeof module === 'undefined')) {
+    iosMain().catch(error => {
+        console.error('Script execution failed:', error.message);
+        if (typeof process !== 'undefined') {
+            process.exit(1);
+        }
+    });
 }
