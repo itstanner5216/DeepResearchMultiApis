@@ -40,7 +40,14 @@ const CONFIG = {
   SUMMARIZE: true              // Enable bullet-point summaries
 };
 
-const Pasteboard = importModule("Pasteboard");
+let Pasteboard;
+try {
+  Pasteboard = importModule("Pasteboard");
+} catch (e) {
+  console.error("❌ Failed to import Pasteboard module. Are you running in Scriptable?");
+  if (typeof Script !== "undefined" && Script.complete) Script.complete();
+  throw e;
+}
 let query = Pasteboard.pasteString();
 if (!query || query.trim().length < 3) {
   console.log("❌ No valid clipboard input found.");
