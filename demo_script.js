@@ -266,6 +266,6 @@ async function demoDeepResearch() {
 }
 
 // Run demo
-if (require.main === module || typeof global !== 'undefined') {
+if (require.main === module) {
   demoDeepResearch();
 }
