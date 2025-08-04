@@ -92,7 +92,6 @@ class NotificationManager {
             notifier.notify({
                 title: title,
                 message: message,
-                icon: type === 'error' ? 'path/to/error-icon.png' : 'path/to/info-icon.png',
                 sound: true,
                 wait: false
             });
