@@ -225,10 +225,10 @@ async function run() {
     }));
   }
 
-  let output = await formatMarkdown(webResults, "Web Results");
+  let output = await formatResultsWithContent(webResults, "Web Results");
   if (newsResults.length) {
     output += "\n## News Results\n";
-    output += await formatMarkdown(newsResults, "");
+    output += await formatResultsWithContent(newsResults, "");
   }
 
   Pasteboard.copy(output);
