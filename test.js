@@ -12,16 +12,18 @@ class TestRunner {
 
     async test(name, testFn) {
         console.log(`\n🧪 Testing: ${name}`);
+        let testPassed = false;
         try {
             await testFn();
             console.log(`✅ PASSED: ${name}`);
             this.passed++;
+            testPassed = true;
         } catch (error) {
             console.log(`❌ FAILED: ${name}`);
             console.log(`   Error: ${error.message}`);
             this.failed++;
         }
-        this.tests.push({ name, passed: this.failed === 0 });
+        this.tests.push({ name, passed: testPassed });
     }
 
     summary() {
