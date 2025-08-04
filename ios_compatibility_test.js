@@ -158,7 +158,7 @@ async function fetchWithRetry(url, headers = {}, maxRetries = TEST_CONFIG.RETRY_
     if (attempt < maxRetries) {
       const delay = 1000 * attempt;
       logWarn(`Retrying in ${delay}ms...`);
-      await new Promise(resolve => Timer.schedule(delay, false, resolve));
+      await wait(delay);
     }
   }
   
