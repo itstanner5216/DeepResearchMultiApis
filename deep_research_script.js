@@ -171,7 +171,19 @@ async function braveSearch(q) {
 
 async function newsSearch(q) {
   const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&pageSize=3&apiKey=${newsKey}`;
-  return await fetchJSON(url);
+  try {
+    const res = await fetchJSON(url);
+    // NewsAPI returns { status: "error", message: "..."} on error
+    if (res && res.status === "error") {
+      console.error("NewsAPI error:", res.message || "Unknown error");
+      return [];
+    }
+    // NewsAPI returns { status: "ok", articles: [...] }
+    return res.articles || [];
+  } catch (e) {
+    console.error("Failed to fetch NewsAPI results:", e);
+    return [];
+  }
 }
 
 async function formatResultsWithContent(results, title) {
