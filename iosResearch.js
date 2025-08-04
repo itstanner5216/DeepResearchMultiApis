@@ -4,6 +4,32 @@
  * Focuses on clipboard-to-clipboard workflow
  */
 
+// Conditional imports for Node.js environment
+let axios, clipboardy, fs, path;
+if (typeof require !== 'undefined') {
+    try {
+        axios = require('axios');
+    } catch (e) {
+        // axios not available
+    }
+    try {
+        clipboardy = require('node-clipboardy');
+    } catch (e) {
+        // clipboardy not available
+    }
+    try {
+        fs = require('fs');
+        path = require('path');
+    } catch (e) {
+        // fs/path not available
+    }
+    try {
+        require('dotenv').config();
+    } catch (e) {
+        // dotenv not available
+    }
+}
+
 // Scriptable Configuration - can be modified directly or loaded from Keychain
 const SCRIPTABLE_CONFIG = {
   BRAVE_API_KEY: "",
@@ -693,7 +719,8 @@ class IOSDeepResearcher {
                 } else if (typeof clipboardy !== 'undefined') {
                     query = await clipboardy.read();
                 } else {
-                    throw new Error('No clipboard access available');
+                    // For Node.js environments without clipboardy, we can't do clipboard workflow
+                    throw new Error('Clipboard access not available. Please install clipboardy or use a direct query.');
                 }
             } catch (error) {
                 throw new Error('Failed to read from clipboard. Make sure clipboard access is enabled.');
@@ -869,8 +896,8 @@ async function iosMain() {
                 Script.setShortcutOutput(summary);
             }
             
-        } else if (IOSDetector.isTerminalApp()) {
-            // Terminal app mode (a-Shell, iSH, etc.)
+        } else if (IOSDetector.isTerminalApp() || typeof process !== 'undefined') {
+            // Terminal app mode (a-Shell, iSH, etc.) or Node.js environment
             const args = typeof process !== 'undefined' ? process.argv.slice(2) : [];
             
             IOSLogger.info('iOS terminal environment detected');

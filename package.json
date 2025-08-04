@@ -14,6 +14,7 @@
     "config": "node deepResearch.js --config",
     "test": "node test.js",
     "test-ios": "node test-ios.js",
+    "test-scriptable": "node test-scriptable-compatibility.js",
     "ios": "node iosResearch.js",
     "ios-clipboard": "node iosResearch.js --clipboard",
     "ios-config": "node iosResearch.js --config",
