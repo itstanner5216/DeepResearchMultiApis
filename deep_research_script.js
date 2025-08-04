@@ -214,7 +214,7 @@ async function formatResultsWithContent(results, title) {
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     const cleaned = cleanURL(r.url);
-    const hasProtocol = /^(?:[a-z]+:)?\/\//i.test(cleaned);
+    const hasProtocol = /^(?:[a-z]+:)?\/\//i.test(r.url);
     md += `${i + 1}. **${r.title || "Untitled"}**\n   🔗 ${hasProtocol ? cleaned : "https://" + cleaned}\n   📝 ${r.snippet || "No preview available."}\n`;
     
     // Add scraped content and summary if enabled
