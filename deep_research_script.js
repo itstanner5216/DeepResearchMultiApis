@@ -21,7 +21,11 @@ const CONFIG = {
   RETRY_COUNT: 2,        // Retry attempts
   MAX_RESULTS: 5,        // Results per API
   COPY_TO_CLIPBOARD: true,
-  SHOW_NOTIFICATIONS: true
+  SHOW_NOTIFICATIONS: true,
+  // Enhanced features from PR #8
+  SCRAPE_CONTENT: true,        // Enable/disable content scraping  
+  MAX_CONTENT_LENGTH: 5000,    // Mobile-optimized content limit
+  SUMMARIZE: true              // Enable bullet-point summaries
 };
 
 // Check if running with Shortcuts parameters (more secure)
@@ -29,6 +33,10 @@ if (args && args.shortcutParameter) {
   const params = args.shortcutParameter;
   if (params.braveKey) CONFIG.BRAVE_API_KEY = params.braveKey;
   if (params.newsKey) CONFIG.NEWS_API_KEY = params.newsKey;
+  // Enhanced features configuration
+  if (params.scrapeContent !== undefined) CONFIG.SCRAPE_CONTENT = params.scrapeContent;
+  if (params.summarize !== undefined) CONFIG.SUMMARIZE = params.summarize;
+  if (params.maxContentLength) CONFIG.MAX_CONTENT_LENGTH = params.maxContentLength;
 }
 
 // Configuration validation
@@ -169,6 +177,105 @@ function cleanURL(url) {
   }
 }
 
+// Enhanced content scraping function
+async function scrapeContent(url) {
+  if (!CONFIG.SCRAPE_CONTENT || !url) {
+    return null;
+  }
+  
+  try {
+    console.log(`📄 Scraping content from: ${url}`);
+    
+    const req = new Request(url);
+    req.headers = {
+      "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
+    };
+    req.timeoutInterval = CONFIG.TIMEOUT_MS / 1000;
+    
+    const html = await req.loadString();
+    
+    // Extract text content by removing HTML tags, scripts, and styles
+    let content = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&[a-zA-Z0-9#]+;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Limit content length for mobile performance
+    if (content.length > CONFIG.MAX_CONTENT_LENGTH) {
+      content = content.substring(0, CONFIG.MAX_CONTENT_LENGTH) + "...";
+    }
+    
+    console.log(`✅ Content scraped: ${content.length} characters`);
+    return content;
+    
+  } catch (error) {
+    console.log(`❌ Content scraping failed for ${url}: ${error.message}`);
+    return null;
+  }
+}
+
+// Enhanced auto-summarization function
+function summarizeContent(content) {
+  if (!CONFIG.SUMMARIZE || !content || content.length < 100) {
+    return null;
+  }
+  
+  try {
+    console.log("🧠 Generating summary...");
+    
+    // Split into sentences
+    const sentences = content
+      .split(/[.!?]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 20);
+    
+    if (sentences.length < 3) {
+      return null;
+    }
+    
+    // Score sentences based on position and keywords
+    const keywords = ['important', 'significant', 'breakthrough', 'research', 'findings', 'reveals', 'shows', 'demonstrates', 'conclude', 'result'];
+    
+    const scored = sentences.map((sentence, i) => {
+      let score = 0;
+      
+      // Position scoring (intro and conclusion weighted higher)
+      if (i < sentences.length * 0.3) score += 2; // First 30%
+      if (i > sentences.length * 0.7) score += 1; // Last 30%
+      
+      // Keyword scoring
+      const lowerSentence = sentence.toLowerCase();
+      keywords.forEach(keyword => {
+        if (lowerSentence.includes(keyword)) score += 3;
+      });
+      
+      // Length scoring (medium length preferred)
+      if (sentence.length > 50 && sentence.length < 200) score += 1;
+      
+      return { sentence: sentence.trim(), score, index: i };
+    });
+    
+    // Take top 3-5 sentences
+    scored.sort((a, b) => b.score - a.score);
+    const topSentences = scored.slice(0, Math.min(5, Math.max(3, sentences.length / 3)));
+    
+    // Restore original order
+    topSentences.sort((a, b) => a.index - b.index);
+    
+    const summary = topSentences.map(item => `• ${item.sentence}`).join('\n');
+    console.log(`✅ Summary generated: ${topSentences.length} key points`);
+    
+    return summary;
+    
+  } catch (error) {
+    console.log(`❌ Summarization failed: ${error.message}`);
+    return null;
+  }
+}
+
 // Enhanced Brave Search with comprehensive error handling
 async function braveSearch(q) {
   if (!CONFIG.BRAVE_API_KEY) {
@@ -250,15 +357,16 @@ async function newsSearch(q) {
   };
 }
 
-// Enhanced markdown formatting with metadata
-function formatMarkdown(results, title, isNews = false) {
+// Enhanced markdown formatting with metadata and content scraping
+async function formatMarkdown(results, title, isNews = false) {
   let md = `## ${title}\n`;
   
   if (!results?.length) {
     return md + "❌ No results available.\n\n";
   }
   
-  results.forEach((r, i) => {
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
     const itemTitle = r.title || "Untitled";
     const itemUrl = r.url || "#";
     const description = r.description || r.snippet || "No preview available.";
@@ -286,8 +394,26 @@ function formatMarkdown(results, title, isNews = false) {
       }
     }
     
-    md += `> ${description}\n\n`;
-  });
+    md += `📝 ${description}\n`;
+    
+    // Add scraped content and summary if enabled
+    if (CONFIG.SCRAPE_CONTENT && itemUrl && itemUrl !== "#") {
+      const content = await scrapeContent(itemUrl);
+      if (content) {
+        if (CONFIG.SUMMARIZE) {
+          const summary = summarizeContent(content);
+          if (summary) {
+            md += `📄 **Key Points:**\n${summary}\n`;
+          }
+        } else {
+          const preview = content.length > 300 ? content.substring(0, 300) + "..." : content;
+          md += `📄 **Content Preview:** ${preview}\n`;
+        }
+      }
+    }
+    
+    md += "\n";
+  }
   
   return md;
 }
@@ -330,7 +456,7 @@ async function run(query, timestamp) {
       url: r.url,
       snippet: r.description || r.snippet || "",
     }));
-    output += formatMarkdown(webResults, "🌐 Web Results");
+    output += await formatMarkdown(webResults, "🌐 Web Results");
     totalResults += braveResult.results.length;
   } else {
     console.log(`❌ Brave Search failed: ${braveResult.error}`);
@@ -351,7 +477,7 @@ async function run(query, timestamp) {
       source: a.source,
       author: a.author
     }));
-    output += formatMarkdown(newsResults, "📰 News Results", true);
+    output += await formatMarkdown(newsResults, "📰 News Results", true);
     totalResults += newsResult.results.length;
   } else {
     console.log(`❌ News Search failed: ${newsResult.error}`);
@@ -377,7 +503,12 @@ async function run(query, timestamp) {
   // Send appropriate notification
   if (CONFIG.SHOW_NOTIFICATIONS) {
     if (totalResults > 0) {
-      await showNotification("🧠 Research Complete", `Found ${totalResults} results. ${errors.length > 0 ? `${errors.length} API(s) failed.` : 'All APIs succeeded.'}`);
+      const features = [];
+      if (CONFIG.SCRAPE_CONTENT) features.push("content");
+      if (CONFIG.SUMMARIZE) features.push("summaries");
+      const featuresText = features.length > 0 ? ` with ${features.join(" + ")}` : "";
+      
+      await showNotification("🧠 Research Complete", `Found ${totalResults} results${featuresText}. ${errors.length > 0 ? `${errors.length} API(s) failed.` : 'All APIs succeeded.'}`);
     } else {
       await showNotification("⚠️ Research Failed", `No results found. Check your query and API configuration.`);
     }
