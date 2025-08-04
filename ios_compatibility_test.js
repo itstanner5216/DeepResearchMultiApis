@@ -66,8 +66,10 @@ class MockRequest {
   }
 }
 
-// Override global Request for testing
-global.Request = MockRequest;
+// Use dependency injection for Request in tests instead of overriding global.Request
+// Pass MockRequest as a parameter to functions/classes under test that require Request.
+// Example:
+//   runDeepResearchTest({ RequestClass: MockRequest, config: TEST_CONFIG });
 
 // Mock Timer for delay simulation
 global.Timer = {
