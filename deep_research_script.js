@@ -44,7 +44,7 @@ async function fetchJSON(url, headers = {}) {
   try {
     let req = new Request(url);
     req.headers = headers;
-    req.timeoutInterval = getTimeoutIntervalSeconds(); // Safely convert to seconds
+    req.timeoutInterval = CONFIG.TIMEOUT_MS / 1000; // Safely convert ms to seconds
     
     logInfo(`Making request to: ${url}`);
     let json = await req.loadJSON();
