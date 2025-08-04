@@ -337,8 +337,12 @@ try {
   // Fallback delivery attempt
   if (isRunningOnIOS()) {
     try {
-      Pasteboard.copy("⚠️ Research script encountered an error. Please check the configuration and try again.");
-      Script.setShortcutOutput("⚠️ Research script encountered an error. Please check the configuration and try again.");
+      if (typeof Pasteboard.copy === 'function') {
+        Pasteboard.copy("⚠️ Research script encountered an error. Please check the configuration and try again.");
+      }
+      if (typeof Script.setShortcutOutput === 'function') {
+        Script.setShortcutOutput("⚠️ Research script encountered an error. Please check the configuration and try again.");
+      }
     } catch (fallbackError) {
       console.log("❌ Critical error: Unable to deliver results", fallbackError.message);
     }
