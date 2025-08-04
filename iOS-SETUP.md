@@ -1,247 +1,254 @@
 # iOS Setup Guide for Deep Research Multi-APIs
 
-This guide explains how to set up and use the Deep Research script on iOS devices with iOS Shortcuts.
+This comprehensive guide will help you set up the unified Deep Research script on iOS using the Scriptable app for iOS 18.6+, combining the best features from multiple iOS implementations.
 
-## iOS Compatibility
+## Requirements
 
-The script has been optimized for iOS 18.6+ and works with:
-- **a-Shell** - Free terminal app for iOS
-- **iSH** - Linux shell for iOS
-- **iOS Shortcuts** - Apple's automation app
+- iOS 18.6 or later
+- Scriptable app (free from App Store)
+- Valid API keys for the services you want to use
+- Internet connection
 
-## Installation on iOS
+## Installation Steps
 
-### Option 1: Using a-Shell (Recommended)
+### 1. Install Scriptable
 
-1. **Install a-Shell from App Store**
-   - Download "a-Shell" (free) from the App Store
-   - Open a-Shell and run initial setup
+1. Download "Scriptable" from the App Store (it's free)
+2. Open Scriptable and complete initial setup
 
-2. **Install Node.js and dependencies**
-   ```bash
-   # In a-Shell
-   pkg install nodejs npm
-   
-   # Navigate to your working directory
-   cd Documents
-   
-   # Clone or download the repository files
-   # (You'll need to transfer the files via Files app or other method)
-   ```
+### 2. Add the Deep Research Script
 
-3. **Install dependencies**
-   ```bash
-   npm install
-   ```
+1. Open Scriptable
+2. Tap the "+" button to create a new script
+3. Name it "Deep Research"
+4. Copy the entire content of `deep_research_script.js` into the script editor
+5. Save the script
 
-4. **Configure API keys**
-   ```bash
-   # Create .env file
-   echo "BRAVE_API_KEY=your_brave_key_here" > .env
-   echo "NEWS_API_KEY=your_news_key_here" >> .env  
-   echo "NEWSDATA_API_KEY=your_newsdata_key_here" >> .env
-   ```
+### 3. Configure API Keys
 
-### Option 2: Using iSH
+You have three flexible options to configure your API keys:
 
-1. **Install iSH from App Store**
-2. **Install Node.js**
-   ```bash
-   apk add nodejs npm
-   ```
-3. **Follow similar setup steps as a-Shell**
+#### Option A: Direct Configuration (Simplest)
+Edit the script and add your API keys directly in the CONFIG section:
 
-## iOS Shortcuts Integration
-
-### Basic Clipboard-to-Clipboard Shortcut
-
-1. **Open iOS Shortcuts app**
-2. **Create new shortcut**
-3. **Add these actions:**
-
-   **Step 1: Run Shell Script**
-   - Action: "Run Shell Script"
-   - Shell: Select your terminal app (a-Shell or iSH)
-   - Script: 
-   ```bash
-   cd /path/to/your/project
-   node shortcutsResearch.js
-   ```
-   - Pass input: "to stdin"
-
-   **Step 2: Get Clipboard**
-   - Action: "Get Clipboard"
-   - This provides the search query
-
-   **Step 3: Show Result**
-   - Action: "Show Result" 
-   - This will show the copied results
-
-4. **Save shortcut with a name like "Deep Research"**
-
-### Advanced Shortcut with Input
-
-For more control, create a shortcut that:
-
-1. **Gets text input** (from share sheet, Siri, or manual entry)
-2. **Copies text to clipboard**
-3. **Runs the research script**
-4. **Shows results**
-
-**Shortcut Actions:**
-```
-1. Get Text from Input
-2. Copy to Clipboard
-3. Run Shell Script: "cd /your/path && node shortcutsResearch.js"
-4. Get Clipboard (the results)
-5. Show Result / Share / Quick Look
+```javascript
+const CONFIG = {
+  BRAVE_API_KEY: "your_brave_api_key_here",
+  NEWS_API_KEY: "your_newsapi_key_here",  
+  NEWSDATA_API_KEY: "your_newsdata_key_here",
+  GOOGLE_API_KEY: "your_google_api_key_here", // Optional
+  GOOGLE_CX: "your_google_cx_here", // Optional
+  // ... rest of config
+};
 ```
 
-## Usage Examples
+#### Option B: iOS Keychain (Most Secure)
+Use iOS Shortcuts to store API keys securely:
 
-### Using the iOS-optimized script directly:
+1. Open iOS Shortcuts app
+2. Create a new shortcut to set keys:
+   - Add "Set Value" action
+   - Set to Keychain
+   - Key: "BRAVE_API_KEY", Value: your key
+   - Repeat for other API keys (NEWS_API_KEY, NEWSDATA_API_KEY, etc.)
 
-```bash
-# Default: read from clipboard, search, write results to clipboard
-node iosResearch.js
+#### Option C: Via iOS Shortcuts Parameters
+Pass API keys as parameters when calling from iOS Shortcuts (most flexible).
 
-# Same as above (explicit)
-node iosResearch.js --clipboard
+## Getting API Keys
 
-# Search with specific query
-node iosResearch.js "artificial intelligence"
+### Brave Search API
+1. Visit [Brave Search API](https://api.search.brave.com/app/keys)
+2. Sign up for a free account
+3. Generate an API key
+4. Free tier includes 2,000 queries per month
 
-# Test clipboard access
-node iosResearch.js --test-clipboard
+### NewsAPI
+1. Visit [NewsAPI.org](https://newsapi.org/register)
+2. Sign up for a free account
+3. Get your API key from the dashboard
+4. Free tier includes 1,000 requests per day
 
-# View configuration
-node iosResearch.js --config
+### Newsdata.io
+1. Visit [Newsdata.io](https://newsdata.io/register)
+2. Sign up for a free account
+3. Get your API key from the dashboard
+4. Free tier includes 200 requests per day
+
+### Google Custom Search (Optional)
+1. Visit [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project or select existing
+3. Enable Custom Search API
+4. Get API key and create Custom Search Engine ID
+5. Free tier includes 100 searches per day
+
+## Usage Methods
+
+### 1. Running Directly in Scriptable
+
+1. Open Scriptable
+2. Tap "Deep Research" script
+3. Script will read from clipboard or use default query
+4. Wait for results to be copied to clipboard
+
+### 2. iOS Shortcuts Integration
+
+#### Basic Clipboard Workflow:
+1. Open iOS Shortcuts app
+2. Create new shortcut called "Deep Research"
+3. Add these actions:
+   - **Get Clipboard** (gets search query)
+   - **Run Script** → Select "Deep Research"
+   - **Get Clipboard** (gets results)
+   - **Quick Look** or **Share** (display results)
+
+#### Advanced Input Shortcut:
+1. Add **Ask for Text** action
+   - Prompt: "What would you like to research?"
+2. Add **Copy to Clipboard** action
+3. Add **Run Script** → Select "Deep Research"
+4. Add **Get Clipboard** → Get results
+5. Add **Quick Look** → Display results
+
+#### Voice-Activated via Siri:
+1. Create shortcut as above
+2. Go to shortcut settings
+3. Add "Add to Siri"
+4. Record phrase like "Deep research" or "Search the web"
+
+### 3. Share Sheet Integration
+
+1. Create new shortcut
+2. Enable "Use with Share Sheet" in settings
+3. Add these actions:
+   - **Get Text from Input**
+   - **Copy to Clipboard**
+   - **Run Script** → Select "Deep Research"
+   - **Get Clipboard**
+   - **Share**
+
+**Usage:** Select text in any app → Share → "Deep Research"
+
+## Advanced Configuration
+
+### Secure API Key Management with Shortcuts
+
+Create a setup shortcut that stores keys securely:
+
+```
+Actions:
+1. Ask for Text → "Enter Brave Search API Key"
+2. Set Value → Keychain Item: "BRAVE_API_KEY"
+3. Ask for Text → "Enter NewsAPI Key"  
+4. Set Value → Keychain Item: "NEWS_API_KEY"
+5. Ask for Text → "Enter Newsdata.io Key"
+6. Set Value → Keychain Item: "NEWSDATA_API_KEY"
 ```
 
-### Using the Shortcuts wrapper:
+The script will automatically read these keys from Keychain.
 
-```bash
-# This is specifically for iOS Shortcuts
-node shortcutsResearch.js
-```
+### Custom Result Formatting
 
-## iOS-Specific Features
+Modify the formatSection() function in the script to customize output format for your needs.
 
-### Optimizations for iOS
+### Performance Tuning
 
-- **Reduced resource usage**: Fewer simultaneous API calls
-- **Shorter timeouts**: Optimized for mobile networks  
-- **No desktop notifications**: Uses console logging instead
-- **Flexible file paths**: Works with iOS file system restrictions
-- **Error resilience**: Handles network issues gracefully
-
-### Clipboard Workflow
-
-The iOS version is designed around a simple workflow:
-
-1. **Copy search query** to clipboard (manually or via Siri)
-2. **Run the script** (via shortcut or terminal)
-3. **Get results** from clipboard (formatted for easy reading)
-
-### Output Format
-
-Results are formatted specifically for iOS:
-
-```
-🔍 Deep Research Results
-Query: "your search query"
-📅 Nov 15, 2024, 2:30 PM
-📊 Total Results: 25
-
-🦁 BRAVESEARCH (10 results)
-========================================
-1. Article Title Here
-   🔗 https://example.com/article
-   📝 Brief description of the article...
-
-📰 NEWSAPI (15 results)  
-========================================
-1. News Article Title
-   🔗 https://news.example.com
-   📝 News article description...
-
-❌ ERRORS
-========================================
-• someAPI: Rate limit exceeded
-
-🤖 Generated by iOS Deep Research v1.0
-```
+Adjust these CONFIG values for your network/usage:
+- `MAX_RESULTS`: Number of results per source (default: 5)
+- `TIMEOUT_MS`: Network timeout (default: 15000ms)
+- `RETRY_COUNT`: Retry attempts (default: 2)
 
 ## Troubleshooting
 
 ### Common Issues
 
-**"Clipboard access failed"**
-- Make sure your terminal app has clipboard permissions
-- In iOS Settings > Privacy & Security > Accessibility, enable clipboard access
+**"No results found"**
+- Check your internet connection
+- Verify API keys are correct and not expired
+- Try a different search query
+- Check if you've exceeded API limits
 
-**"API key not configured"**
-- Check your .env file has the correct API keys
-- Make sure the .env file is in the same directory as the script
+**"Script execution failed"**
+- Check API key configuration
+- Ensure Scriptable has network permissions
+- Verify iOS clipboard access permissions
+- Check iOS console for error details
+
+**"Clipboard access failed"**
+- Enable clipboard access in iOS Settings > Privacy & Security
+- Grant Scriptable necessary permissions
 
 **"Network timeout"**
-- iOS networks can be slower; the script uses longer timeouts
-- Try again on a better network connection
+- Mobile networks can be slower
+- Try on WiFi if having issues on cellular
+- Script uses 15-second timeouts by default
 
-**"Command not found"**
-- Make sure Node.js is properly installed in your terminal app
-- Check that you're in the correct directory
+**"Shortcuts integration issues"**
+- Enable clipboard access for Shortcuts app
+- Check script name matches exactly in Shortcuts
+- Test script directly in Scriptable first
 
-### iOS-Specific Limitations
+### Error Messages
 
-- **File system access**: Limited to app containers and Documents folder
-- **Background execution**: iOS may terminate long-running processes
-- **Network restrictions**: Cellular networks may have different timeouts
-- **Memory limits**: iOS aggressively manages app memory
-
-## Shortcuts Examples
-
-### Siri Integration
-
-Create a shortcut that:
-1. Takes Siri voice input
-2. Copies to clipboard  
-3. Runs research
-4. Speaks results summary
-
-### Share Sheet Integration
-
-Create a shortcut that:
-1. Receives text from share sheet
-2. Researches the shared text
-3. Returns formatted results
-
-### Widget Integration
-
-Create a widget shortcut that:
-1. Uses predefined queries
-2. Shows quick research results
-3. Opens full results when tapped
+- **"Brave Search API key not configured"**: Add your Brave API key
+- **"NewsAPI key not configured"**: Add your NewsAPI key  
+- **"No valid search query provided"**: Ensure query is in clipboard or passed via Shortcuts
 
 ## Performance Tips
 
-- **Use fewer APIs** on cellular networks to save data
-- **Cache results** by saving to Files app when needed
-- **Use specific queries** rather than very broad searches
-- **Monitor data usage** as API calls consume cellular data
+- Use WiFi when possible for faster results
+- Keep search queries specific but not too narrow
+- Monitor your API usage to stay within free limits
+- Consider upgrading API plans if you need more requests
 
-## Security Notes
+## Privacy & Security
 
-- **API keys**: Store securely in .env file, never in shortcuts directly
-- **Clipboard data**: Be aware that clipboard content is accessible to the script
-- **Network traffic**: All API calls are made over HTTPS
-- **Local storage**: Logs and config files stay on device
+- API keys are stored locally on your device
+- No data is sent to third parties except the configured APIs
+- All API calls are made over HTTPS
+- Clipboard data is only used for input/output
+- iOS Keychain provides encrypted storage for API keys
 
-## Getting API Keys
+## Features
 
-See the main README.md for detailed instructions on getting API keys from:
-- Brave Search API
-- NewsAPI.org  
-- Newsdata.io
+### Core Functionality
+- **Multiple API Support**: Brave Search, NewsAPI, Newsdata.io (Google optional)
+- **Intelligent Fallbacks**: Automatic fallback from NewsAPI to Newsdata.io
+- **Mobile Optimization**: Extended timeouts and retry logic for cellular networks
+- **Comprehensive Error Handling**: User-friendly error messages and notifications
 
-All APIs offer free tiers suitable for personal use on iOS.
+### iOS Integration
+- **Clipboard Workflow**: Input from clipboard, output to clipboard
+- **Shortcuts Integration**: Full iOS Shortcuts app compatibility
+- **Voice Control**: Siri integration through Shortcuts
+- **Share Sheet**: Research text from any app
+- **Native Notifications**: iOS notification system integration
+- **Keychain Security**: Secure API key storage
+
+### Advanced Features
+- **Multiple Input Methods**: Clipboard, Shortcuts parameters, direct input
+- **Configurable Settings**: Customizable timeouts, result limits, and formatting
+- **Concurrent API Calls**: Parallel execution for faster results
+- **Detailed Logging**: Comprehensive console output for debugging
+
+## Support
+
+If you encounter issues:
+
+1. Check the console output in Scriptable for error messages
+2. Verify your API keys are valid and not expired
+3. Test with a simple query like "technology news"
+4. Ensure you have an active internet connection
+5. Try running the script directly in Scriptable first
+
+The script includes comprehensive error handling and logging to help diagnose issues.
+
+## Next Steps
+
+After setup:
+1. Test with the compatibility test script
+2. Create your preferred Shortcuts workflows
+3. Set up Siri voice commands
+4. Customize formatting and settings as needed
+
+This unified implementation provides the most comprehensive iOS deep research solution with advanced error handling, multiple input methods, and seamless integration with iOS workflows.
