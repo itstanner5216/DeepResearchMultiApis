@@ -130,9 +130,9 @@ function logInfo(message, data = null) { log("INFO", message, data); }
 function logWarn(message, data = null) { log("WARN", message, data); }
 function logError(message, data = null) { log("ERROR", message, data); }
 
-async function fetchJSON(url, headers = {}) {
+async function fetchJSON(url, headers = {}, RequestClass = global.Request) {
   try {
-    let req = new Request(url);
+    let req = new RequestClass(url);
     req.headers = headers;
     req.timeoutInterval = TEST_CONFIG.TIMEOUT_MS / 1000;
     
