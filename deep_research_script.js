@@ -79,30 +79,12 @@ if (!validateConfiguration()) {
 async function main() {
   console.log("🧠 Starting main execution...");
 
-  // Enhanced input validation and initialization
-  const Pasteboard = importModule("Pasteboard");
-
   // Get query from clipboard or Shortcuts parameter
-  let query = "";
-  if (args && args.shortcutParameter && args.shortcutParameter.query) {
-    query = args.shortcutParameter.query;
-    console.log("📱 Using query from Shortcuts parameter");
-  } else {
-    try {
-      query = Pasteboard.pasteString();
-      console.log("📋 Using query from clipboard");
-    } catch (error) {
-      console.log("❌ Error reading from clipboard: " + error.message);
-      await showNotification("❌ Clipboard Error", "Unable to read clipboard content. Check clipboard permissions or content.");
-      Script.complete();
-      return;
-    }
-  }
+  let query = args?.shortcutParameter?.query || Pasteboard.pasteString();
 
-  // Comprehensive input validation
   if (!query) {
     console.log("❌ No input found in clipboard or parameters");
-    await showNotification("❌ No Input", "Please copy a search query to clipboard or pass via Shortcuts");
+    await showNotification("❌ No Input", "Please copy a search query to the clipboard or pass via Shortcuts.");
     Script.complete();
     return;
   }
@@ -110,7 +92,7 @@ async function main() {
   query = query.trim();
   if (query.length < 2) {
     console.log("❌ Query too short (minimum 2 characters required)");
-    await showNotification("❌ Query Too Short", "Search query must be at least 2 characters long");
+    await showNotification("❌ Query Too Short", "Search query must be at least 2 characters long.");
     Script.complete();
     return;
   }
@@ -118,7 +100,7 @@ async function main() {
   if (query.length > 200) {
     console.log("⚠️ Query very long, truncating to 200 characters");
     query = query.substring(0, 200).trim();
-    await showNotification("⚠️ Query Truncated", "Search query was shortened to 200 characters");
+    await showNotification("⚠️ Query Truncated", "Search query was shortened to 200 characters.");
   }
 
   console.log(`✅ Query validated: "${query}" (${query.length} characters)`);
