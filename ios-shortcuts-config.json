@@ -2,10 +2,174 @@
   "name": "Deep Research iOS Shortcut",
   "description": "iOS Shortcuts configuration for Deep Research Multi-APIs",
   "version": "1.0",
-  "shortcuts": [
+{
+  "name": "Deep Research iOS Shortcuts",
+  "description": "iOS Shortcuts configurations for Deep Research Multi-APIs (Scriptable + Terminal)",
+  "version": "2.0",
+  "scriptableShortcuts": [
     {
       "name": "Deep Research",
-      "description": "Search from clipboard and return results to clipboard",
+      "description": "Basic clipboard-to-clipboard research using Scriptable",
+      "type": "scriptable",
+      "actions": [
+        {
+          "type": "Run Script",
+          "app": "Scriptable",
+          "script": "Deep Research",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard",
+          "description": "Gets research results from clipboard"
+        },
+        {
+          "type": "Show Result",
+          "description": "Displays formatted research results"
+        }
+      ],
+      "icon": "🔍",
+      "color": "blue",
+      "recommended": true
+    },
+    {
+      "name": "Deep Research with Input",
+      "description": "Research with manual text input using Scriptable",
+      "type": "scriptable",
+      "actions": [
+        {
+          "type": "Ask for Text",
+          "prompt": "What would you like to research?",
+          "defaultAnswer": ""
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Provided Input"
+        },
+        {
+          "type": "Run Script",
+          "app": "Scriptable",
+          "script": "Deep Research",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Show Result"
+        }
+      ],
+      "icon": "📝",
+      "color": "green"
+    },
+    {
+      "name": "Deep Research from Siri",
+      "description": "Voice-activated research via Siri using Scriptable",
+      "type": "scriptable",
+      "actions": [
+        {
+          "type": "Dictate Text",
+          "locale": "en-US",
+          "stopOnPause": true
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Dictated Text"
+        },
+        {
+          "type": "Run Script",
+          "app": "Scriptable",
+          "script": "Deep Research",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Speak Text",
+          "text": "Research complete. Results are on your clipboard.",
+          "rate": "0.5"
+        },
+        {
+          "type": "Show Notification",
+          "title": "Deep Research",
+          "body": "Voice research completed successfully"
+        }
+      ],
+      "icon": "🎤",
+      "color": "red",
+      "addToSiri": true,
+      "siriPhrase": "Deep research"
+    },
+    {
+      "name": "Deep Research from Share",
+      "description": "Research shared text from other apps using Scriptable",
+      "type": "scriptable",
+      "actions": [
+        {
+          "type": "Get Text from Input",
+          "description": "Gets shared text from other apps"
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Text"
+        },
+        {
+          "type": "Run Script",
+          "app": "Scriptable",
+          "script": "Deep Research",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Quick Look",
+          "description": "Preview research results"
+        }
+      ],
+      "icon": "📤",
+      "color": "purple",
+      "shareSheet": true
+    },
+    {
+      "name": "Deep Research Widget",
+      "description": "Widget-optimized research using Scriptable",
+      "type": "scriptable",
+      "actions": [
+        {
+          "type": "Ask for Text",
+          "prompt": "Quick research:",
+          "defaultAnswer": ""
+        },
+        {
+          "type": "Copy to Clipboard",
+          "input": "Provided Input"
+        },
+        {
+          "type": "Run Script",
+          "app": "Scriptable",
+          "script": "Deep Research",
+          "passInput": false
+        },
+        {
+          "type": "Get Clipboard"
+        },
+        {
+          "type": "Show Notification",
+          "title": "Research Complete",
+          "body": "Results copied to clipboard"
+        }
+      ],
+      "icon": "📊",
+      "color": "orange",
+      "widget": true
+    }
+  ],
+  "terminalShortcuts": [
+    {
+      "name": "Deep Research (Terminal)",
+      "description": "Basic research using a-Shell terminal",
+      "type": "terminal",
       "actions": [
         {
           "type": "Run Shell Script",
@@ -18,8 +182,9 @@
       "color": "blue"
     },
     {
-      "name": "Deep Research with Input",
-      "description": "Search with text input and return results",
+      "name": "Deep Research with Input (Terminal)",
+      "description": "Research with text input using terminal",
+      "type": "terminal",
       "actions": [
         {
           "type": "Ask for Text",
@@ -47,8 +212,9 @@
       "color": "green"
     },
     {
-      "name": "Deep Research from Siri",
-      "description": "Voice-activated research via Siri",
+      "name": "Deep Research from Siri (Terminal)",
+      "description": "Voice-activated research using terminal",
+      "type": "terminal",
       "actions": [
         {
           "type": "Dictate Text",
@@ -76,11 +242,12 @@
       "icon": "🎤",
       "color": "red",
       "addToSiri": true,
-      "siriPhrase": "Deep research"
+      "siriPhrase": "Terminal deep research"
     },
     {
-      "name": "Deep Research from Share",
-      "description": "Research shared text from other apps",
+      "name": "Deep Research from Share (Terminal)",
+      "description": "Research shared text using terminal",
+      "type": "terminal",
       "actions": [
         {
           "type": "Get Text from Input"
@@ -109,18 +276,53 @@
   ],
   "requirements": {
     "ios": "18.6+",
-    "apps": ["a-Shell", "Shortcuts"],
+    "apps": {
+      "scriptable": ["Scriptable", "Shortcuts"],
+      "terminal": ["a-Shell", "iSH", "Shortcuts"]
+    },
     "permissions": ["clipboard", "microphone", "siri"]
   },
   "setup": {
-    "steps": [
-      "Install a-Shell from App Store",
-      "Install Node.js in a-Shell: pkg install nodejs npm",
-      "Copy project files to ~/Documents/DeepResearchMultiApis/",
-      "Install dependencies: npm install",
-      "Configure API keys in .env file",
-      "Import shortcuts from this configuration",
-      "Test with: npm run shortcuts"
+    "scriptable": {
+      "steps": [
+        "Install Scriptable app from App Store",
+        "Create new script in Scriptable named 'Deep Research'",
+        "Copy content from scriptableResearch.js into the script",
+        "Configure API keys using Keychain.set() or direct edit",
+        "Test script by running it with text in clipboard",
+        "Import shortcuts from scriptableShortcuts configuration",
+        "Test shortcuts integration"
+      ],
+      "apiKeySetup": [
+        "await Keychain.set('BRAVE_API_KEY', 'your_key');",
+        "await Keychain.set('NEWS_API_KEY', 'your_key');", 
+        "await Keychain.set('NEWSDATA_API_KEY', 'your_key');"
+      ]
+    },
+    "terminal": {
+      "steps": [
+        "Install a-Shell or iSH from App Store",
+        "Install Node.js: pkg install nodejs npm (a-Shell) or apk add nodejs npm (iSH)",
+        "Copy project files to ~/Documents/DeepResearchMultiApis/",
+        "Install dependencies: npm install",
+        "Configure API keys in .env file",
+        "Import shortcuts from terminalShortcuts configuration",
+        "Test with: npm run shortcuts"
+      ]
+    }
+  },
+  "testing": {
+    "scriptable": [
+      "Copy 'artificial intelligence' to clipboard",
+      "Run 'Deep Research' script in Scriptable",
+      "Check clipboard for formatted results",
+      "Verify iOS notifications appear"
+    ],
+    "terminal": [
+      "Copy 'machine learning' to clipboard", 
+      "Run iOS Shortcut with terminal script",
+      "Check clipboard for results",
+      "Verify console output"
     ]
   }
 }

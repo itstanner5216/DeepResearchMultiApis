@@ -10,7 +10,9 @@ A robust multi-API deep research tool designed for MyAssistantGPT that fetches d
 - **Retry Logic**: Exponential backoff retry mechanism
 - **Clipboard Integration**: Search from clipboard content
 - **System Notifications**: Desktop notifications for search results
-- **iOS Compatibility**: Optimized for iOS 18.6+ with Shortcuts support
+- **iOS Scriptable Support**: Native iOS Scriptable app compatibility
+- **iOS Shortcuts Integration**: Seamless iOS 18.6+ Shortcuts support
+- **Terminal Apps Support**: Works with a-Shell and iSH on iOS
 - **Flexible Configuration**: JSON and environment variable configuration
 - **Comprehensive Logging**: Detailed logging to file and console
 

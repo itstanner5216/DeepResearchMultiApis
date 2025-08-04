@@ -6,7 +6,8 @@
   "bin": {
     "deep-research": "./deepResearch.js",
     "ios-research": "./iosResearch.js",
-    "shortcuts-research": "./shortcutsResearch.js"
+    "shortcuts-research": "./shortcutsResearch.js",
+    "scriptable-research": "./scriptableResearch.js"
   },
   "scripts": {
     "start": "node deepResearch.js",
@@ -18,7 +19,9 @@
     "ios-clipboard": "node iosResearch.js --clipboard",
     "ios-config": "node iosResearch.js --config",
     "ios-test": "node iosResearch.js --test-clipboard",
-    "shortcuts": "node shortcutsResearch.js"
+    "shortcuts": "node shortcutsResearch.js",
+    "scriptable": "echo 'Copy scriptableResearch.js content to Scriptable iOS app'",
+    "test-scriptable": "node test-scriptable-simple.js"
   },
   "keywords": ["research", "api", "news", "search", "brave", "newsapi", "newsdata"],
   "author": "MyAssistantGPT",
