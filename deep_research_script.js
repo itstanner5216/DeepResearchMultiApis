@@ -9,12 +9,25 @@ let query = args.queryText || args.plainTexts?.[0] || "recent technology news";
 let timestamp = new Date().toLocaleString();
 
 // API Keys - These should be configured in iOS Shortcuts as input parameters
-let newsKey = args.newsApiKey || "YOUR_NEWS_API_KEY";
-let newsdataKey = args.newsdataKey || "YOUR_NEWSDATA_KEY";
-let braveKey = args.braveApiKey || "YOUR_BRAVE_API_KEY";
-let googleKey = args.googleApiKey || "YOUR_GOOGLE_API_KEY";
-let googleCx = args.googleCx || "YOUR_GOOGLE_CX";
+let newsKey = args.newsApiKey;
+let newsdataKey = args.newsdataKey;
+let braveKey = args.braveApiKey;
+let googleKey = args.googleApiKey;
+let googleCx = args.googleCx;
 
+// Validate required API keys
+function requireKey(key, keyName) {
+  if (!key) {
+    const error = new Error(`Missing required API key: ${keyName}`);
+    handleIOSError(error, "API Key Validation");
+    throw error;
+  }
+}
+requireKey(newsKey, "newsApiKey");
+requireKey(newsdataKey, "newsdataKey");
+requireKey(braveKey, "braveApiKey");
+requireKey(googleKey, "googleApiKey");
+requireKey(googleCx, "googleCx");
 // iOS-specific error handling
 function handleIOSError(error, context) {
   console.log(`❌ iOS Error in ${context}:`, error.message);
