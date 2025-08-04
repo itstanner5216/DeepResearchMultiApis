@@ -69,7 +69,11 @@ async function main() {
     query = query.substring(0, 200).trim();
     await showNotification("⚠️ Query Truncated", "Search query was shortened to 200 characters.");
   }
-  console.log(`✅ Query validated: "${query}" (${query.length} characters)`);
+
+  // Encode the query to ensure safe API usage
+  const encodedQuery = encodeURIComponent(query);
+
+  console.log(`✅ Query validated and encoded: "${encodedQuery}" (${encodedQuery.length} characters)`);
   const now = new Date();
   const timestamp = now.toLocaleString("en-US", {
     year: 'numeric',
@@ -78,7 +82,7 @@ async function main() {
     hour: '2-digit',
     minute: '2-digit'
   });
-  await run(query, timestamp);
+  await run(encodedQuery, timestamp);
 }
 
 async function showNotification(title, body, sound = true) {
