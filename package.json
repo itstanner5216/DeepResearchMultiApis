@@ -1,0 +1,24 @@
+{
+  "name": "deepresearchmultiapis",
+  "version": "1.0.0",
+  "description": "Multi-API deep research tool for MyAssistantGPT",
+  "main": "deepResearch.js",
+  "bin": {
+    "deep-research": "./deepResearch.js"
+  },
+  "scripts": {
+    "start": "node deepResearch.js",
+    "search": "node deepResearch.js",
+    "config": "node deepResearch.js --config",
+    "test": "node test.js"
+  },
+  "keywords": ["research", "api", "news", "search", "brave", "newsapi", "newsdata"],
+  "author": "MyAssistantGPT",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
+    "node-clipboardy": "^1.0.3",
+    "node-notifier": "^10.0.1"
+  }
+}
