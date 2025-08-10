@@ -1,6 +1,7 @@
 const BRAVE_API_KEY = "BSAUZcHnbsKgi9GTsu4wQV2SPEeZ3wy";
 const NEWS_API_KEY = "09494b1a857d48a3b7fe62515c1ab8f9";
-const NEWSDATA_API_KEY = "pub_demo_newsdata_key";
+// Set your Newsdata.io API key in the environment variable NEWSDATA_API_KEY
+const NEWSDATA_API_KEY = process.env.NEWSDATA_API_KEY || "";
 
 const CONFIG = {
   BRAVE_API_KEY: BRAVE_API_KEY,
