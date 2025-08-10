@@ -20,8 +20,8 @@ async function shortcutsMain() {
         // Always use clipboard workflow for shortcuts
         const result = await researcher.iosClipboardWorkflow();
 
-        const errorCount = result.results.errors.length;
-        const totalResults = result.results.totalResults;
+        const errorCount = (result.results?.errors?.length || 0);
+        const totalResults = result.results?.totalResults;
         const allApisFailed = totalResults === 0 && errorCount > 0;
 
         if (!result.clipboardUpdated || allApisFailed) {
