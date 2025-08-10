@@ -26,7 +26,10 @@ Download "Scriptable" from the App Store (free)
 1. Open Scriptable
 2. Create new script called "Deep Research"
 3. Copy the content of `deep_research_script.js`
-4. Configure your API keys
+4. Provide your API keys via Shortcuts parameters (`braveKey`/`newsKey`/`newsdataKey`),
+   iOS Keychain entries (`BRAVE_API_KEY`/`NEWS_API_KEY`/`NEWSDATA_API_KEY`), or environment
+   variables. If no keys are found the script uses placeholder values and
+   warns you.
 
 ### 3. Basic Usage
 - Copy search query to clipboard → Run script → Get results from clipboard
@@ -43,6 +46,20 @@ Get free API keys from these services:
 | **NewsAPI** | 1,000 requests/day | [newsapi.org](https://newsapi.org/register) |
 | **Newsdata.io** | 200 requests/day | [newsdata.io](https://newsdata.io/register) |
 | **Google Search** (optional) | 100 searches/day | [console.cloud.google.com](https://console.cloud.google.com) |
+
+### API Key Configuration
+
+The script automatically looks for API keys in this order of priority:
+
+1. **Shortcuts parameters**: `braveKey`, `newsKey`, `newsdataKey` 
+2. **iOS Keychain entries**: `BRAVE_API_KEY`, `NEWS_API_KEY`, `NEWSDATA_API_KEY`
+3. **Environment variables**: Same names as Keychain
+4. **Placeholder values**: Used if no keys are found (with warnings)
+
+For secure storage, use iOS Shortcuts to store keys in Keychain:
+- Create a new shortcut with "Add to Variable" → "Set Variable" → "Save to Keychain"
+- Key: `BRAVE_API_KEY`, Value: your actual API key
+- Repeat for other APIs
 
 ## 📱 Core Functionality
 
