@@ -185,7 +185,38 @@ async function runTests() {
         }
     });
 
-    // Test 8: Comprehensive search
+    // Test 8: Newsdata response normalization
+    await runner.test('Newsdata Response Normalization', async () => {
+        const mockData = {
+            results: [
+                {
+                    title: 'Example',
+                    link: 'https://example.com',
+                    description: 'desc',
+                    content: 'content',
+                    creator: ['A', 'B'],
+                    source_id: 'source',
+                    pubDate: '2024-01-01',
+                    image_url: 'img',
+                    category: ['tech', 'ai'],
+                    country: ['us', 'gb'],
+                    language: 'en'
+                }
+            ]
+        };
+        const normalized = researcher.processNewsdataResponse(mockData);
+        if (normalized[0].creator !== 'A, B') {
+            throw new Error('Creator array not normalized');
+        }
+        if (normalized[0].category !== 'tech, ai') {
+            throw new Error('Category array not normalized');
+        }
+        if (normalized[0].country !== 'us, gb') {
+            throw new Error('Country array not normalized');
+        }
+    });
+
+    // Test 9: Comprehensive search
     await runner.test('Comprehensive Search', async () => {
         const result = await researcher.comprehensiveSearch('test query');
         if (!result.hasOwnProperty('query')) {
@@ -202,7 +233,7 @@ async function runTests() {
         }
     });
 
-    // Test 9: Results summary generation
+    // Test 10: Results summary generation
     await runner.test('Results Summary Generation', async () => {
         const mockResults = {
             query: 'test',

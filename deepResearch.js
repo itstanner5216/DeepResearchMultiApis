@@ -496,17 +496,26 @@ class DeepResearcher {
         try {
             if (data.results) {
                 data.results.forEach(article => {
+                    const creator = Array.isArray(article.creator)
+                        ? article.creator.join(', ')
+                        : (article.creator || 'Unknown creator');
+                    const category = Array.isArray(article.category)
+                        ? article.category.join(', ')
+                        : article.category || null;
+                    const country = Array.isArray(article.country)
+                        ? article.country.join(', ')
+                        : article.country || null;
                     results.push({
                         title: article.title || 'No title',
                         url: article.link || '',
                         description: article.description || 'No description',
                         content: article.content || '',
-                        creator: article.creator || 'Unknown creator',
+                        creator: creator,
                         source: article.source_id || 'Unknown source',
                         publishedAt: article.pubDate || null,
                         imageUrl: article.image_url || null,
-                        category: article.category || null,
-                        country: article.country || null,
+                        category: category,
+                        country: country,
                         language: article.language || null
                     });
                 });
