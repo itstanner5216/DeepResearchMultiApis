@@ -46,11 +46,13 @@ function validateConfiguration() {
   return true;
 }
 
+let configIsValid = true;
 try {
   validateConfiguration();
 } catch (error) {
   console.log(`❌ Configuration validation failed: ${error.message}`);
   Script.complete();
+  configIsValid = false;
 }
 
 async function main() {
@@ -266,4 +268,6 @@ function displayResults(results) {
   console.log("\n" + "=".repeat(60));
 }
 
-await main();
+if (configIsValid) {
+  await main();
+}
