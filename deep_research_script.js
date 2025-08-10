@@ -157,6 +157,17 @@ async function run(searchQuery, timestamp) {
     const processedResults = processResults(braveResults, newsResults);
     displayResults(processedResults);
 
+    if (CONFIG.COPY_TO_CLIPBOARD) {
+      try {
+        const serialized = JSON.stringify(processedResults, null, 2);
+        Pasteboard.copy(serialized);
+        Script.setShortcutOutput(serialized);
+        console.log("📋 Results copied to clipboard");
+      } catch (error) {
+        console.log(`⚠️ Failed to copy results: ${error.message}`);
+      }
+    }
+
     const successCount = (braveResults ? 1 : 0) + (newsResults ? 1 : 0);
     console.log(`Search completed with ${successCount}/2 APIs successful at`, timestamp);
     
