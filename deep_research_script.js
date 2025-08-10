@@ -53,7 +53,6 @@ async function runWithValidation() {
   } catch (error) {
     console.log(`❌ Configuration validation failed: ${error.message}`);
     Script.complete();
-    return; // Stop execution after logging the validation failure
   }
 
   await main();
