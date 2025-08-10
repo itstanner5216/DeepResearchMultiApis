@@ -47,6 +47,15 @@ if (params) {
   if (params.maxContentLength) CONFIG.MAX_CONTENT_LENGTH = params.maxContentLength;
 }
 
+/**
+ * Determines whether a key is considered "missing" in this context.
+ * A key is considered missing if it is falsy (e.g., undefined, null, empty string, 0, false)
+ * or if it matches the provided placeholder value.
+ *
+ * @param {*} key - The value to check for presence.
+ * @param {*} placeholder - The placeholder value that indicates a missing key.
+ * @returns {boolean} True if the key is missing; otherwise, false.
+ */
 function isMissing(key, placeholder) {
   return !key || key === placeholder;
 }
