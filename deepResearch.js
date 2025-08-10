@@ -294,7 +294,7 @@ class DeepResearcher {
                 url: this.config.newsAPI.baseUrl,
                 params: params,
                 headers: {
-                    'Authorization': `Bearer ${this.config.newsAPI.apiKey}`,
+                    'X-Api-Key': this.config.newsAPI.apiKey,
                     'User-Agent': 'DeepResearchMultiApis/1.0'
                 },
                 timeout: this.config.newsAPI.timeout
