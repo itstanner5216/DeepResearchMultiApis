@@ -28,16 +28,16 @@ This comprehensive guide will help you set up the unified Deep Research script o
 
 You have three flexible options to configure your API keys:
 
-#### Option A: Direct Configuration (Simplest)
-Edit the script and add your API keys directly in the CONFIG section:
+#### Option A: Environment Variables or Config File
+Set API keys in your environment or config file and reference them in the script:
 
 ```javascript
 const CONFIG = {
-  BRAVE_API_KEY: "your_brave_api_key_here",
-  NEWS_API_KEY: "your_newsapi_key_here",  
-  NEWSDATA_API_KEY: "your_newsdata_key_here",
-  GOOGLE_API_KEY: "your_google_api_key_here", // Optional
-  GOOGLE_CX: "your_google_cx_here", // Optional
+  BRAVE_API_KEY: process.env.BRAVE_API_KEY || '',
+  NEWS_API_KEY: process.env.NEWS_API_KEY || '',
+  NEWSDATA_API_KEY: process.env.NEWSDATA_API_KEY || '',
+  GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || '', // Optional
+  GOOGLE_CX: process.env.GOOGLE_CX || '',           // Optional
   // ... rest of config
 };
 ```
