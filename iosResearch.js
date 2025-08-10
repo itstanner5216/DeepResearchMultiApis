@@ -531,14 +531,19 @@ class IOSDeepResearcher {
             // Generate iOS-friendly summary
             const summary = this.generateIOSResultsSummary(results);
 
+            // Flag to track if clipboard was updated successfully
+            let clipboardUpdated = false;
+            let success = true;
+
             // Write results back to clipboard
             try {
                 await clipboardy.write(summary);
+                clipboardUpdated = true;
                 IOSLogger.info('Results summary written to clipboard');
                 IOSNotificationManager.notify('Clipboard Updated', 'Search results copied to clipboard');
             } catch (error) {
                 IOSLogger.error('Failed to write to clipboard', error);
-                // Still return results even if clipboard write fails
+                success = false; // Propagate failure
             }
 
             // For iOS Shortcuts, also output to console
@@ -548,11 +553,11 @@ class IOSDeepResearcher {
             }
 
             return {
-                success: true,
+                success: success,
                 query: query,
                 results: results,
                 summary: summary,
-                clipboardUpdated: true
+                clipboardUpdated: clipboardUpdated
             };
 
         } catch (error) {
