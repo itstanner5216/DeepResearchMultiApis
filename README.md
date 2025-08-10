@@ -111,12 +111,12 @@ Get free API keys from these services:
 
 ### API Key Storage Methods
 
-#### Option A: Direct Configuration (Simplest)
+#### Option A: Environment Variables or Config File
 ```javascript
 const CONFIG = {
-  BRAVE_API_KEY: "your_brave_api_key_here",
-  NEWS_API_KEY: "your_newsapi_key_here",  
-  NEWSDATA_API_KEY: "your_newsdata_key_here",
+  BRAVE_API_KEY: process.env.BRAVE_API_KEY || '',
+  NEWS_API_KEY: process.env.NEWS_API_KEY || '',
+  NEWSDATA_API_KEY: process.env.NEWSDATA_API_KEY || '',
   // ... other settings
 };
 ```

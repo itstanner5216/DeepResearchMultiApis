@@ -1,5 +1,15 @@
-const BRAVE_API_KEY = "BSAUZcHnbsKgi9GTsu4wQV2SPEeZ3wy";
-const NEWS_API_KEY = "09494b1a857d48a3b7fe62515c1ab8f9";
+function getApiKey(keyName) {
+  if (typeof Keychain !== 'undefined' && Keychain.contains(keyName)) {
+    return Keychain.get(keyName);
+  }
+  if (typeof process !== 'undefined' && process.env[keyName]) {
+    return process.env[keyName];
+  }
+  return '';
+}
+
+const BRAVE_API_KEY = getApiKey('BRAVE_API_KEY');
+const NEWS_API_KEY = getApiKey('NEWS_API_KEY');
 
 const CONFIG = {
   BRAVE_API_KEY: BRAVE_API_KEY,
