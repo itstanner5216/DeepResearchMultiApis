@@ -1,19 +1,38 @@
-function getApiKey(keyName) {
-  if (typeof Keychain !== 'undefined' && Keychain.contains(keyName)) {
-    return Keychain.get(keyName);
+const params = typeof args !== 'undefined' ? args.shortcutParameter : undefined;
+
+/**
+ * Retrieves a value from the Keychain by key.
+ * Returns undefined if the Keychain is not available or if an error occurs.
+ *
+ * @param {string} key - The key to retrieve from the Keychain.
+ * @returns {string|undefined} The value associated with the key, or undefined if not found or on error.
+ */
+function getKeychainValue(key) {
+  if (typeof Keychain === 'undefined') return undefined;
+  try {
+    return Keychain.get(key);
+  } catch (_) {
+    return undefined;
   }
-  if (typeof process !== 'undefined' && process.env[keyName]) {
-    return process.env[keyName];
-  }
-  return '';
 }
 
-const BRAVE_API_KEY = getApiKey('BRAVE_API_KEY');
-const NEWS_API_KEY = getApiKey('NEWS_API_KEY');
+function getApiKey(paramKey, storageKey, envKey, placeholder) {
+  return (params && params[paramKey]) ||
+    getKeychainValue(storageKey) ||
+    (typeof process !== 'undefined' && process.env[envKey]) ||
+    placeholder;
+}
+
+const PLACEHOLDERS = {
+  BRAVE: 'YOUR_BRAVE_API_KEY',
+  NEWS: 'YOUR_NEWS_API_KEY',
+  NEWSDATA: 'YOUR_NEWSDATA_API_KEY'
+};
 
 const CONFIG = {
-  BRAVE_API_KEY: BRAVE_API_KEY,
-  NEWS_API_KEY: NEWS_API_KEY,
+  BRAVE_API_KEY: getApiKey('braveKey', 'BRAVE_API_KEY', 'BRAVE_API_KEY', PLACEHOLDERS.BRAVE),
+  NEWS_API_KEY: getApiKey('newsKey', 'NEWS_API_KEY', 'NEWS_API_KEY', PLACEHOLDERS.NEWS),
+  NEWSDATA_API_KEY: getApiKey('newsdataKey', 'NEWSDATA_API_KEY', 'NEWSDATA_API_KEY', PLACEHOLDERS.NEWSDATA),
   TIMEOUT_MS: 15000,
   RETRY_COUNT: 2,
   MAX_RESULTS: 5,
@@ -24,32 +43,49 @@ const CONFIG = {
   SUMMARIZE: true
 };
 
-if (args && args.shortcutParameter) {
-  const params = args.shortcutParameter;
-  if (params.braveKey) CONFIG.BRAVE_API_KEY = params.braveKey;
-  if (params.newsKey) CONFIG.NEWS_API_KEY = params.newsKey;
+if (params) {
   if (params.scrapeContent !== undefined) CONFIG.SCRAPE_CONTENT = params.scrapeContent;
   if (params.summarize !== undefined) CONFIG.SUMMARIZE = params.summarize;
   if (params.maxContentLength) CONFIG.MAX_CONTENT_LENGTH = params.maxContentLength;
 }
 
+/**
+ * Determines whether a key is considered "missing" in this context.
+ * A key is considered missing if it is falsy (e.g., undefined, null, empty string, 0, false)
+ * or if it matches the provided placeholder value.
+ *
+ * @param {*} key - The value to check for presence.
+ * @param {*} placeholder - The placeholder value that indicates a missing key.
+ * @returns {boolean} True if the key is missing; otherwise, false.
+ */
+function isMissing(key, placeholder) {
+  return !key || key === placeholder;
+}
+
 function validateConfiguration() {
   const issues = [];
-  if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY) {
-    issues.push("No API keys configured. Add keys to CONFIG or pass via Shortcuts parameters.");
+  const missingBrave = isMissing(CONFIG.BRAVE_API_KEY, PLACEHOLDERS.BRAVE);
+  const missingNews = isMissing(CONFIG.NEWS_API_KEY, PLACEHOLDERS.NEWS);
+  const missingNewsdata = isMissing(CONFIG.NEWSDATA_API_KEY, PLACEHOLDERS.NEWSDATA);
+
+  if (missingBrave && missingNews && missingNewsdata) {
+    issues.push("No API keys configured. Add keys via Shortcuts parameters, Keychain, or environment variables.");
   }
-  if (!CONFIG.BRAVE_API_KEY) {
+  if (missingBrave) {
     issues.push("Brave Search API key missing - web search will be unavailable");
   }
-  if (!CONFIG.NEWS_API_KEY) {
-    issues.push("NewsAPI key missing - news search will be unavailable");
+  if (missingNews) {
+    issues.push("NewsAPI key missing - will rely on Newsdata.io fallback if available");
+  }
+  if (missingNewsdata) {
+    issues.push("Newsdata.io API key missing - news fallback unavailable");
   }
   if (issues.length > 0) {
     console.log("⚠️ Configuration Issues:");
     issues.forEach(issue => console.log(`   • ${issue}`));
-    if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY) {
+    if (missingBrave && missingNews && missingNewsdata) {
       showNotification("❌ Configuration Error", "No API keys found. Check script configuration.");
-      throw new Error("Critical configuration error: No API keys found. Both BRAVE_API_KEY and NEWS_API_KEY are missing.");
+      throw new Error("Critical configuration error: No API keys found. BRAVE_API_KEY, NEWS_API_KEY, and NEWSDATA_API_KEY are all missing.");
     }
   }
   console.log("✅ Configuration validated");
@@ -71,7 +107,8 @@ async function runWithValidation() {
 
 async function main() {
   console.log("🧠 Starting main execution...");
-  let query = args?.shortcutParameter?.query || Pasteboard.paste();
+  const clipboard = typeof Pasteboard !== 'undefined' ? Pasteboard.paste() : undefined;
+  let query = (params && params.query) || clipboard;
   if (!query) {
     console.log("❌ No input found in clipboard or parameters");
     await showNotification("❌ No Input", "Please copy a search query to the clipboard or pass via Shortcuts.");
@@ -133,6 +170,40 @@ async function showNotification(title, body, sound = true) {
   }
 }
 
+function shouldUseFallback(newsResult, newsResults) {
+  return newsResult.status === 'rejected' || 
+         !newsResults || 
+         !newsResults.articles || 
+         newsResults.articles.length === 0;
+}
+
+async function newsdataFallback(searchQuery, fetchFn) {
+  if (isMissing(CONFIG.NEWSDATA_API_KEY, PLACEHOLDERS.NEWSDATA)) {
+    console.log('❌ Newsdata.io API key missing - fallback not attempted');
+    return null;
+  }
+  const url = `https://newsdata.io/api/1/news?apikey=${CONFIG.NEWSDATA_API_KEY}&q=${encodeURIComponent(searchQuery)}`;
+  try {
+    const data = await fetchFn(url);
+    if (!data || !data.results || data.results.length === 0) {
+      console.log('⚠️ Newsdata.io returned no articles');
+      return null;
+    }
+    return {
+      articles: data.results.map(article => ({
+        title: article.title || 'No title',
+        url: article.link || '',
+        description: article.description || 'No description available',
+        publishedAt: article.pubDate || null,
+        source: { name: article.source_id || 'Unknown source' }
+      }))
+    };
+  } catch (error) {
+    console.log('❌ Newsdata.io fallback failed:', error.message);
+    return null;
+  }
+}
+
 async function run(searchQuery, timestamp) {
   const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${searchQuery}&count=${CONFIG.MAX_RESULTS}`;
   const newsApiUrl = `https://newsapi.org/v2/everything?q=${searchQuery}&apiKey=${CONFIG.NEWS_API_KEY}`;
@@ -154,6 +225,8 @@ async function run(searchQuery, timestamp) {
     }
   };
 
+  let usedFallback = false;
+
   try {
     const [braveResult, newsResult] = await Promise.allSettled([
       fetchWithRetry(braveSearchUrl, { "X-Subscription-Token": CONFIG.BRAVE_API_KEY }),
@@ -161,7 +234,7 @@ async function run(searchQuery, timestamp) {
     ]);
 
     const braveResults = braveResult.status === 'fulfilled' ? braveResult.value : null;
-    const newsResults = newsResult.status === 'fulfilled' ? newsResult.value : null;
+    let newsResults = newsResult.status === 'fulfilled' ? newsResult.value : null;
 
     if (braveResult.status === 'rejected') {
       console.log('❌ Brave Search failed:', braveResult.reason.message);
@@ -170,11 +243,44 @@ async function run(searchQuery, timestamp) {
       console.log('❌ News API failed:', newsResult.reason.message);
     }
 
+    if (shouldUseFallback(newsResult, newsResults)) {
+      console.log('🔄 NewsAPI unavailable or empty. Attempting Newsdata.io fallback...');
+      newsResults = await newsdataFallback(searchQuery, fetchWithRetry);
+      if (newsResults && newsResults.articles && newsResults.articles.length > 0) {
+        usedFallback = true;
+        console.log(`✅ Newsdata.io fallback succeeded with ${newsResults.articles.length} articles.`);
+      } else {
+        console.log('❌ Newsdata.io fallback failed or returned no articles.');
+      }
+    }
+
     const processedResults = processResults(braveResults, newsResults);
+    if (usedFallback) {
+      processedResults.sources.news.fallback = true;
+    }
     displayResults(processedResults);
 
-    const successCount = (braveResults ? 1 : 0) + (newsResults ? 1 : 0);
+    // Add clipboard copying functionality (PR #18)
+    if (CONFIG.COPY_TO_CLIPBOARD) {
+      try {
+        const serialized = JSON.stringify(processedResults, null, 2);
+        if (typeof Pasteboard !== 'undefined') {
+          Pasteboard.copy(serialized);
+        }
+        if (typeof Script !== "undefined" && typeof Script.setShortcutOutput === "function") {
+          Script.setShortcutOutput(serialized);
+        }
+        console.log("📋 Results copied to clipboard");
+      } catch (error) {
+        console.log(`⚠️ Failed to copy results: ${error.message}`);
+      }
+    }
+
+    const successCount = (braveResults ? 1 : 0) + (newsResults && newsResults.articles && newsResults.articles.length > 0 ? 1 : 0);
     console.log(`Search completed with ${successCount}/2 APIs successful at`, timestamp);
+    if (usedFallback) {
+      console.log('ℹ️ Newsdata.io fallback was used for news results.');
+    }
     
     if (successCount === 0) {
       await showNotification("❌ Search Failed", "All APIs failed. Please check your configuration and try again.");
@@ -182,6 +288,10 @@ async function run(searchQuery, timestamp) {
       await showNotification("⚠️ Partial Results", "Some APIs failed, but partial results are available.");
     } else {
       await showNotification("✅ Search Complete", "All search APIs completed successfully.");
+    }
+
+    if (usedFallback) {
+      await showNotification("ℹ️ News Fallback Used", "NewsAPI unavailable; results provided by Newsdata.io.", false);
     }
   } catch (error) {
     console.error('Unexpected error during search:', error);
@@ -265,6 +375,9 @@ function displayResults(results) {
   }
 
   console.log("\n📰 NEWS RESULTS:");
+  if (results.sources.news.fallback) {
+    console.log("   🔄 Results from Newsdata.io fallback");
+  }
   if (results.sources.news.available && results.sources.news.results.length > 0) {
     results.sources.news.results.forEach(result => {
       console.log(`\n${result.position}. ${result.title}`);
