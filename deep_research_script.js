@@ -129,7 +129,7 @@ async function newsdataFallback(searchQuery, fetchFn) {
     console.log('❌ Newsdata.io API key missing - fallback not attempted');
     return null;
   }
-  const url = `https://newsdata.io/api/1/news?apikey=${CONFIG.NEWSDATA_API_KEY}&q=${searchQuery}`;
+  const url = `https://newsdata.io/api/1/news?apikey=${CONFIG.NEWSDATA_API_KEY}&q=${encodeURIComponent(searchQuery)}`;
   try {
     const data = await fetchFn(url);
     if (!data || !data.results || data.results.length === 0) {
