@@ -48,9 +48,15 @@ class IOSLogger {
     static log(level, message, error = null) {
         const timestamp = new Date().toISOString();
         const logEntry = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
-        
-        // Always log to console
-        console.log(logEntry);
+
+        // Log to console using appropriate level
+        if (level === 'error') {
+            console.error(logEntry);
+        } else if (level === 'warn') {
+            console.warn(logEntry);
+        } else {
+            console.log(logEntry);
+        }
         
         // Only log to file if not in iOS or if explicitly enabled
         if (!IOSDetector.isIOS() || process.env.IOS_FILE_LOGGING === 'true') {
