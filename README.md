@@ -80,10 +80,9 @@ Get free API keys from these services:
 - Configurable search engine targeting
 - Falls back gracefully if credentials not provided
 
-#### 7. `googleImages()` (Optional)
-- Google Images search functionality
-- Thumbnail and full-size image URLs
-- Integrated with main search results
+#### 7. Image search (planned)
+- Image search support (`googleImages()`) is planned but currently not implemented.
+  It will integrate with the main search results when available.
 
 ## 📋 Usage Examples
 
