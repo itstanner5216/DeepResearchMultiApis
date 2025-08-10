@@ -190,7 +190,7 @@ async function run(searchQuery, timestamp) {
       console.log('❌ News API failed:', newsResult.reason.message);
     }
 
-    if (newsResult.status === 'rejected' || !newsResults?.articles || newsResults.articles.length === 0) {
+    if (shouldUseFallback(newsResult, newsResults)) {
       console.log('🔄 NewsAPI unavailable or empty. Attempting Newsdata.io fallback...');
       newsResults = await newsdataFallback(searchQuery, fetchWithRetry);
       if (newsResults && newsResults.articles && newsResults.articles.length > 0) {
