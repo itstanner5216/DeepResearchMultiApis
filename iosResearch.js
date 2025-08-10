@@ -532,10 +532,12 @@ class IOSDeepResearcher {
             const summary = this.generateIOSResultsSummary(results);
 
             // Write results back to clipboard
+            let clipboardUpdated = false;
             try {
                 await clipboardy.write(summary);
                 IOSLogger.info('Results summary written to clipboard');
                 IOSNotificationManager.notify('Clipboard Updated', 'Search results copied to clipboard');
+                clipboardUpdated = true;
             } catch (error) {
                 IOSLogger.error('Failed to write to clipboard', error);
                 // Still return results even if clipboard write fails
@@ -548,11 +550,11 @@ class IOSDeepResearcher {
             }
 
             return {
-                success: true,
+                success: results.totalResults > 0,
                 query: query,
                 results: results,
                 summary: summary,
-                clipboardUpdated: true
+                clipboardUpdated: clipboardUpdated
             };
 
         } catch (error) {

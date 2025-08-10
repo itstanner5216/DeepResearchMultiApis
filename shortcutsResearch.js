@@ -19,21 +19,30 @@ async function shortcutsMain() {
         
         // Always use clipboard workflow for shortcuts
         const result = await researcher.iosClipboardWorkflow();
-        
-        if (result.success) {
-            // Output success message for shortcuts
-            console.log('✅ DEEP RESEARCH COMPLETE');
-            console.log(`🔍 Query: "${result.query}"`);
-            console.log(`📊 Total Results: ${result.results.totalResults}`);
-            console.log('📋 Results copied to clipboard');
-            
-            // Return success code
-            process.exit(0);
-        } else {
+
+        const errorCount = result.results.errors.length;
+        const totalResults = result.results.totalResults;
+        const allApisFailed = totalResults === 0 && errorCount > 0;
+
+        if (!result.clipboardUpdated || allApisFailed) {
             console.log('❌ DEEP RESEARCH FAILED');
-            console.log('Check your API keys and network connection');
+            if (allApisFailed) {
+                console.log('All APIs failed. Check your API keys and network connection');
+            }
+            if (!result.clipboardUpdated) {
+                console.log('Failed to copy results to clipboard');
+            }
             process.exit(1);
         }
+
+        // Output success message for shortcuts
+        console.log('✅ DEEP RESEARCH COMPLETE');
+        console.log(`🔍 Query: "${result.query}"`);
+        console.log(`📊 Total Results: ${totalResults}`);
+        console.log('📋 Results copied to clipboard');
+
+        // Return success code
+        process.exit(0);
         
     } catch (error) {
         console.log('❌ ERROR:', error.message);
