@@ -427,11 +427,14 @@ class IOSDeepResearcher {
         try {
             if (data.results) {
                 data.results.forEach(article => {
+                    const creator = Array.isArray(article.creator)
+                        ? article.creator.join(', ')
+                        : (article.creator || 'Unknown creator');
                     results.push({
                         title: article.title || 'No title',
                         url: article.link || '',
                         description: article.description || 'No description',
-                        creator: article.creator || 'Unknown creator',
+                        creator: creator,
                         source: article.source_id || 'Unknown source',
                         publishedAt: article.pubDate || null
                     });
