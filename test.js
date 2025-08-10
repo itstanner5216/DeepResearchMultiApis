@@ -83,8 +83,13 @@ async function runTests() {
     // Test 4: BraveSearch function (with invalid API key - should fail gracefully)
     await runner.test('BraveSearch Error Handling', async () => {
         const result = await researcher.braveSearch('test query');
-        if (result.success === true && !researcher.config.braveSearch.apiKey) {
-            throw new Error('Should fail with empty API key');
+        if (!researcher.config.braveSearch.apiKey) {
+            if (result.success !== false) {
+                throw new Error('Result.success should be false when API key is missing');
+            }
+            if (!result.error) {
+                throw new Error('Result should include error when API key is missing');
+            }
         }
         if (!result.hasOwnProperty('success')) {
             throw new Error('Result should have success property');
@@ -97,8 +102,13 @@ async function runTests() {
     // Test 5: NewsAPI function (with invalid API key - should fail gracefully)
     await runner.test('NewsAPI Error Handling', async () => {
         const result = await researcher.newsAPI('test query');
-        if (result.success === true && !researcher.config.newsAPI.apiKey) {
-            throw new Error('Should fail with empty API key');
+        if (!researcher.config.newsAPI.apiKey) {
+            if (result.success !== false) {
+                throw new Error('Result.success should be false when API key is missing');
+            }
+            if (!result.error) {
+                throw new Error('Result should include error when API key is missing');
+            }
         }
         if (!result.hasOwnProperty('success')) {
             throw new Error('Result should have success property');
@@ -111,8 +121,13 @@ async function runTests() {
     // Test 6: NewsdataFallback function (with invalid API key - should fail gracefully)
     await runner.test('NewsdataFallback Error Handling', async () => {
         const result = await researcher.newsdataFallback('test query');
-        if (result.success === true && !researcher.config.newsdataIO.apiKey) {
-            throw new Error('Should fail with empty API key');
+        if (!researcher.config.newsdataIO.apiKey) {
+            if (result.success !== false) {
+                throw new Error('Result.success should be false when API key is missing');
+            }
+            if (!result.error) {
+                throw new Error('Result should include error when API key is missing');
+            }
         }
         if (!result.hasOwnProperty('success')) {
             throw new Error('Result should have success property');
