@@ -51,8 +51,8 @@ try {
   validateConfiguration();
 } catch (error) {
   console.log(`❌ Configuration validation failed: ${error.message}`);
-  Script.complete();
   configIsValid = false;
+  Script.complete();
 }
 
 async function main() {
