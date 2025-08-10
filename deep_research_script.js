@@ -46,11 +46,17 @@ function validateConfiguration() {
   return true;
 }
 
-try {
-  validateConfiguration();
-} catch (error) {
-  console.log(`❌ Configuration validation failed: ${error.message}`);
-  Script.complete();
+// Validate configuration and run the main logic only if validation succeeds.
+async function runWithValidation() {
+  try {
+    validateConfiguration();
+  } catch (error) {
+    console.log(`❌ Configuration validation failed: ${error.message}`);
+    Script.complete();
+    return; // Stop execution after logging the validation failure
+  }
+
+  await main();
 }
 
 async function main() {
@@ -266,4 +272,4 @@ function displayResults(results) {
   console.log("\n" + "=".repeat(60));
 }
 
-await main();
+await runWithValidation();
