@@ -58,10 +58,37 @@ async function runTests() {
 
     // Test 2: Logger functionality
     await runner.test('Logger Functionality', async () => {
-        Logger.info('Test log message');
-        Logger.warn('Test warning message');
-        Logger.error('Test error message');
-        // If we reach here without throwing, logger is working
+        let logCount = 0;
+        let warnCount = 0;
+        let errorCount = 0;
+
+        const origLog = console.log;
+        const origWarn = console.warn;
+        const origError = console.error;
+
+        console.log = () => { logCount++; };
+        console.warn = () => { warnCount++; };
+        console.error = () => { errorCount++; };
+
+        try {
+            Logger.info('Test log message');
+            Logger.warn('Test warning message');
+            Logger.error('Test error message');
+        } finally {
+            console.log = origLog;
+            console.warn = origWarn;
+            console.error = origError;
+        }
+
+        if (logCount !== 1) {
+            throw new Error('Logger.info should call console.log once');
+        }
+        if (warnCount !== 1) {
+            throw new Error('Logger.warn should call console.warn once');
+        }
+        if (errorCount !== 1) {
+            throw new Error('Logger.error should call console.error once');
+        }
     });
 
     // Test 3: Retry utility

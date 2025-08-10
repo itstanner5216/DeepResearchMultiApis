@@ -16,8 +16,16 @@ class Logger {
     static log(level, message, error = null) {
         const timestamp = new Date().toISOString();
         const logEntry = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
-        
-        console.log(logEntry);
+        // Use appropriate console method based on log level
+        if (level === 'error') {
+            console.error(logEntry);
+        } else if (level === 'warn') {
+            console.warn(logEntry);
+        } else if (level === 'debug' && console.debug) {
+            console.debug(logEntry);
+        } else {
+            console.log(logEntry);
+        }
         
         // Append to log file
         try {
