@@ -1,5 +1,12 @@
 const params = typeof args !== 'undefined' ? args.shortcutParameter : undefined;
 
+/**
+ * Retrieves a value from the Keychain by key.
+ * Returns undefined if the Keychain is not available or if an error occurs.
+ *
+ * @param {string} key - The key to retrieve from the Keychain.
+ * @returns {string|undefined} The value associated with the key, or undefined if not found or on error.
+ */
 function getKeychainValue(key) {
   if (typeof Keychain === 'undefined') return undefined;
   try {
