@@ -26,7 +26,10 @@ Download "Scriptable" from the App Store (free)
 1. Open Scriptable
 2. Create new script called "Deep Research"
 3. Copy the content of `deep_research_script.js`
-4. Configure your API keys
+4. Provide your API keys via Shortcuts parameters (`braveKey`/`newsKey`),
+   iOS Keychain entries (`BRAVE_API_KEY`/`NEWS_API_KEY`), or environment
+   variables. If no keys are found the script uses placeholder values and
+   warns you.
 
 ### 3. Basic Usage
 - Copy search query to clipboard → Run script → Get results from clipboard

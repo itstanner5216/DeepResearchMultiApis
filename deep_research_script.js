@@ -1,9 +1,29 @@
-const BRAVE_API_KEY = "BSAUZcHnbsKgi9GTsu4wQV2SPEeZ3wy";
-const NEWS_API_KEY = "09494b1a857d48a3b7fe62515c1ab8f9";
+const params = typeof args !== 'undefined' ? args.shortcutParameter : undefined;
+
+function getKeychainValue(key) {
+  if (typeof Keychain === 'undefined') return undefined;
+  try {
+    return Keychain.get(key);
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function getApiKey(paramKey, storageKey, envKey, placeholder) {
+  return (params && params[paramKey]) ||
+    getKeychainValue(storageKey) ||
+    (typeof process !== 'undefined' && process.env[envKey]) ||
+    placeholder;
+}
+
+const PLACEHOLDERS = {
+  BRAVE: 'YOUR_BRAVE_API_KEY',
+  NEWS: 'YOUR_NEWS_API_KEY'
+};
 
 const CONFIG = {
-  BRAVE_API_KEY: BRAVE_API_KEY,
-  NEWS_API_KEY: NEWS_API_KEY,
+  BRAVE_API_KEY: getApiKey('braveKey', 'BRAVE_API_KEY', 'BRAVE_API_KEY', PLACEHOLDERS.BRAVE),
+  NEWS_API_KEY: getApiKey('newsKey', 'NEWS_API_KEY', 'NEWS_API_KEY', PLACEHOLDERS.NEWS),
   TIMEOUT_MS: 15000,
   RETRY_COUNT: 2,
   MAX_RESULTS: 5,
@@ -14,30 +34,34 @@ const CONFIG = {
   SUMMARIZE: true
 };
 
-if (args && args.shortcutParameter) {
-  const params = args.shortcutParameter;
-  if (params.braveKey) CONFIG.BRAVE_API_KEY = params.braveKey;
-  if (params.newsKey) CONFIG.NEWS_API_KEY = params.newsKey;
+if (params) {
   if (params.scrapeContent !== undefined) CONFIG.SCRAPE_CONTENT = params.scrapeContent;
   if (params.summarize !== undefined) CONFIG.SUMMARIZE = params.summarize;
   if (params.maxContentLength) CONFIG.MAX_CONTENT_LENGTH = params.maxContentLength;
 }
 
+function isMissing(key, placeholder) {
+  return !key || key === placeholder;
+}
+
 function validateConfiguration() {
   const issues = [];
-  if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY) {
-    issues.push("No API keys configured. Add keys to CONFIG or pass via Shortcuts parameters.");
+  const missingBrave = isMissing(CONFIG.BRAVE_API_KEY, PLACEHOLDERS.BRAVE);
+  const missingNews = isMissing(CONFIG.NEWS_API_KEY, PLACEHOLDERS.NEWS);
+
+  if (missingBrave && missingNews) {
+    issues.push("No API keys configured. Add keys via Shortcuts parameters, Keychain, or environment variables.");
   }
-  if (!CONFIG.BRAVE_API_KEY) {
+  if (missingBrave) {
     issues.push("Brave Search API key missing - web search will be unavailable");
   }
-  if (!CONFIG.NEWS_API_KEY) {
+  if (missingNews) {
     issues.push("NewsAPI key missing - news search will be unavailable");
   }
   if (issues.length > 0) {
     console.log("⚠️ Configuration Issues:");
     issues.forEach(issue => console.log(`   • ${issue}`));
-    if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY) {
+    if (missingBrave && missingNews) {
       showNotification("❌ Configuration Error", "No API keys found. Check script configuration.");
       throw new Error("Critical configuration error: No API keys found. Both BRAVE_API_KEY and NEWS_API_KEY are missing.");
     }
@@ -55,7 +79,8 @@ try {
 
 async function main() {
   console.log("🧠 Starting main execution...");
-  let query = args?.shortcutParameter?.query || Pasteboard.paste();
+  const clipboard = typeof Pasteboard !== 'undefined' ? Pasteboard.paste() : undefined;
+  let query = (params && params.query) || clipboard;
   if (!query) {
     console.log("❌ No input found in clipboard or parameters");
     await showNotification("❌ No Input", "Please copy a search query to the clipboard or pass via Shortcuts.");

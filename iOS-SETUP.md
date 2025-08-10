@@ -26,23 +26,16 @@ This comprehensive guide will help you set up the unified Deep Research script o
 
 ### 3. Configure API Keys
 
-You have three flexible options to configure your API keys:
+The script automatically looks for API keys in this order:
 
-#### Option A: Direct Configuration (Simplest)
-Edit the script and add your API keys directly in the CONFIG section:
+1. Shortcut parameters (`braveKey`, `newsKey`)
+2. iOS Keychain entries (`BRAVE_API_KEY`, `NEWS_API_KEY`)
+3. Environment variables (`BRAVE_API_KEY`, `NEWS_API_KEY`)
+4. Placeholder values in the script
 
-```javascript
-const CONFIG = {
-  BRAVE_API_KEY: "your_brave_api_key_here",
-  NEWS_API_KEY: "your_newsapi_key_here",  
-  NEWSDATA_API_KEY: "your_newsdata_key_here",
-  GOOGLE_API_KEY: "your_google_api_key_here", // Optional
-  GOOGLE_CX: "your_google_cx_here", // Optional
-  // ... rest of config
-};
-```
+If none are found, placeholders are used and the script warns you.
 
-#### Option B: iOS Keychain (Most Secure)
+#### Option A: iOS Keychain (Most Secure)
 Use iOS Shortcuts to store API keys securely:
 
 1. Open iOS Shortcuts app
@@ -52,8 +45,12 @@ Use iOS Shortcuts to store API keys securely:
    - Key: "BRAVE_API_KEY", Value: your key
    - Repeat for other API keys (NEWS_API_KEY, NEWSDATA_API_KEY, etc.)
 
-#### Option C: Via iOS Shortcuts Parameters
+#### Option B: Via iOS Shortcuts Parameters
 Pass API keys as parameters when calling from iOS Shortcuts (most flexible).
+
+#### Option C: Environment Variables
+Set `BRAVE_API_KEY` and `NEWS_API_KEY` in your environment when running
+the script outside of Shortcuts (e.g., in Node.js).
 
 ## Getting API Keys
 
