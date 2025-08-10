@@ -161,7 +161,9 @@ async function run(searchQuery, timestamp) {
       try {
         const serialized = JSON.stringify(processedResults, null, 2);
         Pasteboard.copy(serialized);
-        Script.setShortcutOutput(serialized);
+        if (typeof Script !== "undefined" && typeof Script.setShortcutOutput === "function") {
+          Script.setShortcutOutput(serialized);
+        }
         console.log("📋 Results copied to clipboard");
       } catch (error) {
         console.log(`⚠️ Failed to copy results: ${error.message}`);
