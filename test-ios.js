@@ -46,6 +46,48 @@ class IOSTestRunner {
             // This test always passes as it's just checking detection
         });
 
+        // Simulated detection for a-Shell environment
+        await this.runTest('a-Shell Detection', () => {
+            const originalShell = process.env.SHELL;
+            const originalTerm = process.env.TERM;
+            const originalProgram = process.env.TERM_PROGRAM;
+
+            process.env.SHELL = '/bin/ash';
+            process.env.TERM = 'xterm-256color';
+            process.env.TERM_PROGRAM = 'a-Shell';
+
+            const detected = IOSDetector.isIOS();
+
+            process.env.SHELL = originalShell;
+            process.env.TERM = originalTerm;
+            process.env.TERM_PROGRAM = originalProgram;
+
+            if (!detected) {
+                throw new Error('Failed to detect a-Shell environment');
+            }
+        });
+
+        // Simulated detection for iSH environment
+        await this.runTest('iSH Detection', () => {
+            const originalShell = process.env.SHELL;
+            const originalTerm = process.env.TERM;
+            const originalProgram = process.env.TERM_PROGRAM;
+
+            process.env.SHELL = '/bin/ash';
+            process.env.TERM = 'xterm-256color';
+            process.env.TERM_PROGRAM = 'iSH';
+
+            const detected = IOSDetector.isIOS();
+
+            process.env.SHELL = originalShell;
+            process.env.TERM = originalTerm;
+            process.env.TERM_PROGRAM = originalProgram;
+
+            if (!detected) {
+                throw new Error('Failed to detect iSH environment');
+            }
+        });
+
         // Test iOS Path Resolution
         await this.runTest('iOS Path Resolution', () => {
             const configPath = IOSDetector.getIOSCompatiblePath('config.json');

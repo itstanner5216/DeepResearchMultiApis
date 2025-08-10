@@ -20,16 +20,16 @@ class IOSDetector {
         const userAgent = process.env.USER_AGENT || '';
         const shell = process.env.SHELL || '';
         const term = process.env.TERM || '';
-        
+        const termProgram = process.env.TERM_PROGRAM || '';
+        const shellName = path.basename(shell);
+
         return (
-            platform === 'darwin' && (
-                userAgent.includes('iOS') ||
-                shell.includes('ash') ||  // a-Shell
-                shell.includes('ish') ||  // iSH
-                term.includes('xterm-256color') ||
-                process.env.TERM_PROGRAM === 'a-Shell' ||
-                process.env.TERM_PROGRAM === 'iSH'
-            )
+            platform === 'darwin' ||
+            userAgent.includes('iOS') ||
+            termProgram === 'a-Shell' ||
+            termProgram === 'iSH' ||
+            shellName === 'ash' || // BusyBox ash used by a-Shell and iSH
+            (term.includes('xterm-256color') && (termProgram === 'a-Shell' || termProgram === 'iSH'))
         );
     }
 
