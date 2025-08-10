@@ -1,9 +1,11 @@
 const BRAVE_API_KEY = "BSAUZcHnbsKgi9GTsu4wQV2SPEeZ3wy";
 const NEWS_API_KEY = "09494b1a857d48a3b7fe62515c1ab8f9";
+const NEWSDATA_API_KEY = "pub_demo_newsdata_key";
 
 const CONFIG = {
   BRAVE_API_KEY: BRAVE_API_KEY,
   NEWS_API_KEY: NEWS_API_KEY,
+  NEWSDATA_API_KEY: NEWSDATA_API_KEY,
   TIMEOUT_MS: 15000,
   RETRY_COUNT: 2,
   MAX_RESULTS: 5,
@@ -18,6 +20,7 @@ if (args && args.shortcutParameter) {
   const params = args.shortcutParameter;
   if (params.braveKey) CONFIG.BRAVE_API_KEY = params.braveKey;
   if (params.newsKey) CONFIG.NEWS_API_KEY = params.newsKey;
+  if (params.newsdataKey) CONFIG.NEWSDATA_API_KEY = params.newsdataKey;
   if (params.scrapeContent !== undefined) CONFIG.SCRAPE_CONTENT = params.scrapeContent;
   if (params.summarize !== undefined) CONFIG.SUMMARIZE = params.summarize;
   if (params.maxContentLength) CONFIG.MAX_CONTENT_LENGTH = params.maxContentLength;
@@ -25,21 +28,24 @@ if (args && args.shortcutParameter) {
 
 function validateConfiguration() {
   const issues = [];
-  if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY) {
+  if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY && !CONFIG.NEWSDATA_API_KEY) {
     issues.push("No API keys configured. Add keys to CONFIG or pass via Shortcuts parameters.");
   }
   if (!CONFIG.BRAVE_API_KEY) {
     issues.push("Brave Search API key missing - web search will be unavailable");
   }
   if (!CONFIG.NEWS_API_KEY) {
-    issues.push("NewsAPI key missing - news search will be unavailable");
+    issues.push("NewsAPI key missing - will rely on Newsdata.io fallback if available");
+  }
+  if (!CONFIG.NEWSDATA_API_KEY) {
+    issues.push("Newsdata.io API key missing - news fallback unavailable");
   }
   if (issues.length > 0) {
     console.log("⚠️ Configuration Issues:");
     issues.forEach(issue => console.log(`   • ${issue}`));
-    if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY) {
+    if (!CONFIG.BRAVE_API_KEY && !CONFIG.NEWS_API_KEY && !CONFIG.NEWSDATA_API_KEY) {
       showNotification("❌ Configuration Error", "No API keys found. Check script configuration.");
-      throw new Error("Critical configuration error: No API keys found. Both BRAVE_API_KEY and NEWS_API_KEY are missing.");
+      throw new Error("Critical configuration error: No API keys found. BRAVE_API_KEY, NEWS_API_KEY, and NEWSDATA_API_KEY are all missing.");
     }
   }
   console.log("✅ Configuration validated");
@@ -117,6 +123,33 @@ async function showNotification(title, body, sound = true) {
   }
 }
 
+async function newsdataFallback(searchQuery, fetchFn) {
+  if (!CONFIG.NEWSDATA_API_KEY) {
+    console.log('❌ Newsdata.io API key missing - fallback not attempted');
+    return null;
+  }
+  const url = `https://newsdata.io/api/1/news?apikey=${CONFIG.NEWSDATA_API_KEY}&q=${searchQuery}`;
+  try {
+    const data = await fetchFn(url);
+    if (!data || !data.results || data.results.length === 0) {
+      console.log('⚠️ Newsdata.io returned no articles');
+      return null;
+    }
+    return {
+      articles: data.results.map(article => ({
+        title: article.title || 'No title',
+        url: article.link || '',
+        description: article.description || 'No description available',
+        publishedAt: article.pubDate || null,
+        source: { name: article.source_id || 'Unknown source' }
+      }))
+    };
+  } catch (error) {
+    console.log('❌ Newsdata.io fallback failed:', error.message);
+    return null;
+  }
+}
+
 async function run(searchQuery, timestamp) {
   const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${searchQuery}&count=${CONFIG.MAX_RESULTS}`;
   const newsApiUrl = `https://newsapi.org/v2/everything?q=${searchQuery}&apiKey=${CONFIG.NEWS_API_KEY}`;
@@ -138,6 +171,8 @@ async function run(searchQuery, timestamp) {
     }
   };
 
+  let usedFallback = false;
+
   try {
     const [braveResult, newsResult] = await Promise.allSettled([
       fetchWithRetry(braveSearchUrl, { "X-Subscription-Token": CONFIG.BRAVE_API_KEY }),
@@ -145,7 +180,7 @@ async function run(searchQuery, timestamp) {
     ]);
 
     const braveResults = braveResult.status === 'fulfilled' ? braveResult.value : null;
-    const newsResults = newsResult.status === 'fulfilled' ? newsResult.value : null;
+    let newsResults = newsResult.status === 'fulfilled' ? newsResult.value : null;
 
     if (braveResult.status === 'rejected') {
       console.log('❌ Brave Search failed:', braveResult.reason.message);
@@ -154,18 +189,39 @@ async function run(searchQuery, timestamp) {
       console.log('❌ News API failed:', newsResult.reason.message);
     }
 
+    if (newsResult.status === 'rejected' || !newsResults?.articles || newsResults.articles.length === 0) {
+      console.log('🔄 NewsAPI unavailable or empty. Attempting Newsdata.io fallback...');
+      newsResults = await newsdataFallback(searchQuery, fetchWithRetry);
+      if (newsResults && newsResults.articles && newsResults.articles.length > 0) {
+        usedFallback = true;
+        console.log(`✅ Newsdata.io fallback succeeded with ${newsResults.articles.length} articles.`);
+      } else {
+        console.log('❌ Newsdata.io fallback failed or returned no articles.');
+      }
+    }
+
     const processedResults = processResults(braveResults, newsResults);
+    if (usedFallback) {
+      processedResults.sources.news.fallback = true;
+    }
     displayResults(processedResults);
 
-    const successCount = (braveResults ? 1 : 0) + (newsResults ? 1 : 0);
+    const successCount = (braveResults ? 1 : 0) + (newsResults && newsResults.articles && newsResults.articles.length > 0 ? 1 : 0);
     console.log(`Search completed with ${successCount}/2 APIs successful at`, timestamp);
-    
+    if (usedFallback) {
+      console.log('ℹ️ Newsdata.io fallback was used for news results.');
+    }
+
     if (successCount === 0) {
       await showNotification("❌ Search Failed", "All APIs failed. Please check your configuration and try again.");
     } else if (successCount === 1) {
       await showNotification("⚠️ Partial Results", "Some APIs failed, but partial results are available.");
     } else {
       await showNotification("✅ Search Complete", "All search APIs completed successfully.");
+    }
+
+    if (usedFallback) {
+      await showNotification("ℹ️ News Fallback Used", "NewsAPI unavailable; results provided by Newsdata.io.", false);
     }
   } catch (error) {
     console.error('Unexpected error during search:', error);
@@ -249,6 +305,9 @@ function displayResults(results) {
   }
 
   console.log("\n📰 NEWS RESULTS:");
+  if (results.sources.news.fallback) {
+    console.log("   🔄 Results from Newsdata.io fallback");
+  }
   if (results.sources.news.available && results.sources.news.results.length > 0) {
     results.sources.news.results.forEach(result => {
       console.log(`\n${result.position}. ${result.title}`);
