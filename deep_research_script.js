@@ -72,7 +72,7 @@ async function main() {
   }
 
   if (query.length > 200) {
-    console.log("⚠️ Query very long, truncating to 200 characters");
+    console.log("⚠️ Query too long, truncating to 200 characters");
     let truncated = query.substring(0, 200);
     const lastSpace = truncated.lastIndexOf(' ');
     if (lastSpace > 150) {
