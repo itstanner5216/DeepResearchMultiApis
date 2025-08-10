@@ -569,6 +569,9 @@ class DeepResearcher {
                     if (result && result.success) {
                         results.sources[api] = result;
                         results.totalResults += result.resultsCount || 0;
+                    } else if (result && !result.success) {
+                        results.errors.push({ api, error: result.error });
+                        Logger.warn(`${api} returned an unsuccessful result: ${result.error}`);
                     } else if (error) {
                         results.errors.push({ api, error });
                     }
