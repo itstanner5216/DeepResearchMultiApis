@@ -153,6 +153,7 @@ Pass API keys as parameters when calling from iOS Shortcuts
 ```javascript
 const CONFIG = {
   MAX_RESULTS: 5,              // Results per API (default: 5)
+  SUMMARY_RESULTS_LIMIT: 10,   // Links per source included in summary
   TIMEOUT_MS: 15000,           // Network timeout (default: 15s)
   RETRY_COUNT: 2,              // Retry attempts (default: 2)
   SCRAPE_CONTENT: true,        // Enable full article scraping

@@ -137,8 +137,9 @@ class RetryUtility {
 
 // Main Research Class
 class DeepResearcher {
-    constructor() {
+    constructor(options = {}) {
         this.config = ConfigManager.loadConfig();
+        this.summaryResultsLimit = options.summaryResultsLimit || parseInt(process.env.SUMMARY_RESULTS_LIMIT, 10) || 10;
         Logger.info('DeepResearcher initialized');
     }
 
@@ -652,7 +653,7 @@ class DeepResearcher {
         Object.entries(results.sources).forEach(([api, data]) => {
             summary += `=== ${api.toUpperCase()} (${data.resultsCount} results) ===\n`;
             
-            data.results.slice(0, 5).forEach((item, index) => {
+            data.results.slice(0, this.summaryResultsLimit).forEach((item, index) => {
                 summary += `${index + 1}. ${item.title}\n`;
                 summary += `   ${item.url}\n`;
                 summary += `   ${item.description}\n\n`;
