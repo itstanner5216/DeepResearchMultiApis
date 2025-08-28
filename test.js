@@ -251,13 +251,40 @@ async function runTests() {
             },
             errors: []
         };
-        
+
         const summary = researcher.generateResultsSummary(mockResults);
         if (!summary || typeof summary !== 'string') {
             throw new Error('Summary should be a non-empty string');
         }
         if (!summary.includes('Test Title')) {
             throw new Error('Summary should include result titles');
+        }
+    });
+
+    await runner.test('Summary Results Limit', async () => {
+        const limitedResearcher = new DeepResearcher({ summaryResultsLimit: 3 });
+        const mockResults = {
+            query: 'limit test',
+            timestamp: new Date().toISOString(),
+            totalResults: 5,
+            sources: {
+                testapi: {
+                    resultsCount: 5,
+                    results: [
+                        { title: 'Title1', url: 'https://1.com', description: 'd1' },
+                        { title: 'Title2', url: 'https://2.com', description: 'd2' },
+                        { title: 'Title3', url: 'https://3.com', description: 'd3' },
+                        { title: 'Title4', url: 'https://4.com', description: 'd4' },
+                        { title: 'Title5', url: 'https://5.com', description: 'd5' }
+                    ]
+                }
+            },
+            errors: []
+        };
+
+        const summary = limitedResearcher.generateResultsSummary(mockResults);
+        if (!summary.includes('Title3') || summary.includes('Title4')) {
+            throw new Error('Summary results limit not applied correctly');
         }
     });
 
